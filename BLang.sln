@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.33627.172
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLang", "BLang\BLang.csproj", "{6BB4C81E-A15C-4A57-948A-F110F666EA90}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLang Test", "BLang Test\BLang Test.csproj", "{74CACC60-A94C-4C56-8EDC-9BB565DB8774}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6BB4C81E-A15C-4A57-948A-F110F666EA90}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6BB4C81E-A15C-4A57-948A-F110F666EA90}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6BB4C81E-A15C-4A57-948A-F110F666EA90}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6BB4C81E-A15C-4A57-948A-F110F666EA90}.Release|Any CPU.Build.0 = Release|Any CPU
+		{74CACC60-A94C-4C56-8EDC-9BB565DB8774}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{74CACC60-A94C-4C56-8EDC-9BB565DB8774}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{74CACC60-A94C-4C56-8EDC-9BB565DB8774}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{74CACC60-A94C-4C56-8EDC-9BB565DB8774}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {ED2BE49E-A536-46C9-B26B-399024CBAE0E}
+	EndGlobalSection
+EndGlobal
