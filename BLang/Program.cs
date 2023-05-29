@@ -1,10 +1,21 @@
 ﻿using BLang;
-using BLang.Error;
+using BLang.SelfDocumentation;
+using BLang.Utils;
+using System.Security.Cryptography.X509Certificates;
 
 public class Program
 {
     public static void Main(string[] args)
     {
+        if (AppSettings.GenerateDocs)
+        {
+            string docsFile = "documentation.txt";
+            var fileStream = new StreamWriter(docsFile);
+
+            ErrorDocumenter.WriteDocumentation(fileStream);
+            fileStream.Close();
+        }
+
         string fileName = "test-file.txt";
 
         ParserContext context = new();
@@ -12,16 +23,25 @@ public class Program
 
         if (File.Exists(fileName))
         {
-            tokenizer.SetStream(new StreamReader(fileName));
+            var writer = new StreamReader(fileName);
+
+            try
+            {
+                tokenizer.SetStream(writer);
+
+                while (tokenizer.NextToken())
+                {
+                    context.Token.PrintToken();
+                }
+            }
+            finally
+            {
+                writer.Close();
+            }
         }
         else
         {
             throw new FileNotFoundException();
-        }
-
-        while (tokenizer.NextToken())
-        {
-            context.Token.PrintToken();
         }
     }
 }

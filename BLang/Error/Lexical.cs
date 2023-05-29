@@ -1,4 +1,6 @@
-﻿namespace BLang.Error
+﻿using System.Diagnostics;
+
+namespace BLang.Error
 {
     /// <summary>
     /// Error created when a token is not recognized by the system.
@@ -19,7 +21,7 @@
             }
         }
 
-        public override eParseError ErrorCode => eParseError.UnexpectedCharacter;
+        public override eParseError ErrorType => eParseError.UnexpectedCharacter;
 
         public override eErrorLevel Level => eErrorLevel.Error;
 
@@ -44,7 +46,7 @@
             }
         }
 
-        public override eParseError ErrorCode => eParseError.InvalidRealLiteral;
+        public override eParseError ErrorType => eParseError.InvalidRealLiteral;
 
         public override eErrorLevel Level => eErrorLevel.Error;
 
@@ -70,7 +72,7 @@
             }
         }
 
-        public override eParseError ErrorCode => eParseError.InvalidCharacterLiteral;
+        public override eParseError ErrorType => eParseError.InvalidCharacterLiteral;
 
         public override eErrorLevel Level => eErrorLevel.Error;
 
@@ -96,7 +98,7 @@
             }
         }
 
-        public override eParseError ErrorCode => eParseError.InvalidNumberLiteral;
+        public override eParseError ErrorType => eParseError.InvalidNumberLiteral;
 
         public override eErrorLevel Level => eErrorLevel.Error;
 
@@ -122,7 +124,7 @@
             }
         }
 
-        public override eParseError ErrorCode => eParseError.UnrecognizedEscapeSequence;
+        public override eParseError ErrorType => eParseError.UnrecognizedEscapeSequence;
 
         public override eErrorLevel Level => eErrorLevel.Error;
 
@@ -131,5 +133,35 @@
             // Continue and just skip this token.
             return true;
         }
+    }
+
+    public class NewLineInLiteral : ParseError
+    {
+        public NewLineInLiteral(ParserContext context, eTokenType type)
+            : base(context)
+        {
+            Trace.Assert(type == eTokenType.String || type == eTokenType.Char);
+            mType = type;
+        }
+
+        protected override bool ChildRecoverFromError()
+        {
+            return true;
+        }
+
+        public override eErrorLevel Level => eErrorLevel.Error;
+
+        protected override string Message
+        {
+            get
+            {
+                return $"A new line was found in {mType} token definition";
+            }
+        }
+
+        public override eParseError ErrorType => (mType == eTokenType.Char) ?
+            eParseError.NewLineInCharLiteral : eParseError.NewLineInStringLiteral;
+
+        private eTokenType mType;
     }
 }

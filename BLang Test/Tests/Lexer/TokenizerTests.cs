@@ -1,6 +1,7 @@
 ﻿using BLang.Error;
 using BLang.Syntax;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NuGet.Frameworks;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
@@ -106,11 +107,26 @@ namespace BLang.Tests
         }
 
         [TestMethod]
-        public void TestNumbersErrorCases()
+        public void TestErrorCases()
         {
             string file = """
-                0xx1
-                .01 1.e12
+                // Invalid numbers
+                0xx1 .01 1.e12
+
+                // Too many chars in char literal
+                'aasdf "asd"'
+                var
+
+                // Invalid strings
+                "text \6asd"    // Invalid escape sequence
+
+                // String ends file without closing the end quote.
+                "asdf
+                entrypt
+
+                // Char goes onto new line.
+                'ab\4cd
+                entrypt
                 """;
 
             var tokenizer = StringToTokenizer(file);
@@ -136,8 +152,30 @@ namespace BLang.Tests
             // Pull off the e12 which should actually be an identifier.
             tokenizer.NextToken();
 
+            tokenizer.NextToken();
+            Assert.AreEqual(context.Token.Type, eTokenType.InvalidToken);
+
+            // After the error case at the top, the char should fail, but the thing below it should be fine.
+            tokenizer.NextToken();
+            Assert.AreEqual(context.Token.Type, eTokenType.ReserveWord);
+            Assert.AreEqual(context.Token.Lexeme, "var");
+
+            tokenizer.NextToken();
+            Assert.AreEqual(context.Token.Type, eTokenType.InvalidToken);
+
+            // A new line was specified in the middle of the string. That's an error.
+            tokenizer.NextToken();
+            Assert.AreEqual(context.Token.Type, eTokenType.InvalidToken);
+
+            // No error should be logged with this last one
+            tokenizer.NextToken();
+            Assert.AreEqual(context.Token.Type, eTokenType.ReserveWord);
+
+            tokenizer.NextToken();
+            Assert.AreEqual(context.Token.Type, eTokenType.InvalidToken);
+
             // We should have logged three errors.
-            Assert.AreEqual(tokenizer.ErrorLogger.ErrorCount, 3);
+            Assert.AreEqual(tokenizer.ErrorLogger.ErrorCount, 8);
         }
 
         [TestMethod]

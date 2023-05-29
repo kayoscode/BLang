@@ -4,6 +4,7 @@ using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Xml;
 
 namespace BLang
 {
@@ -74,34 +75,16 @@ namespace BLang
 
         private void ReadCharacterLiteral()
         {
-            char token;
-
             NextCharacter();
-
-            if (mChar == '\\')
+            if (ReadStringHelper('\'', eTokenType.Char))
             {
-                NextCharacter();
-                if (!ReadEscapedChar(mChar, out token))
+                // Must have only one character to be a valid char.
+                if (mCurrentToken.Lexeme.Length != 1)
                 {
-                    ErrorLogger.LogError(new UnrecognizedEscapeSequence(mParserContext));
+                    ErrorLogger.LogError(new InvalidCharLiteral(mParserContext));
+                    mCurrentToken.Type = eTokenType.InvalidToken;
                 }
             }
-            else
-            {
-                token = mChar;
-            }
-
-            NextCharacter();
-
-            if (mChar != '\'')
-            {
-                ErrorLogger.LogError(new InvalidCharLiteral(mParserContext));
-                return;
-            }
-
-            NextCharacter();
-
-            mCurrentToken.SetTokenData(string.Empty + token, eTokenType.Char);
         }
 
         /// <summary>
@@ -219,20 +202,40 @@ namespace BLang
         /// Reads a string and stores it in the token.
         /// </summary>
         /// <returns></returns>
-        public void ReadString()
+        private void ReadString()
         {
             NextCharacter();
+            ReadStringHelper('"', eTokenType.String);
+        }
 
+        /// <summary>
+        /// Returns false if there was an error found.
+        /// </summary>
+        /// <param name="endChar"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        private bool ReadStringHelper(char endChar, eTokenType type)
+        {
             StringBuilder loadedString = new StringBuilder();
 
-            while (mChar != '"' && mChar != EOF)
+            bool error = false;
+
+            while (mChar != endChar) 
             {
-                if (mChar == '\\')
+                // If there's a new line, we have to catch it. A string cannot go into the next line.
+                if (mChar == EOF || mChar == '\n')
+                {
+                    ErrorLogger.LogError(new NewLineInLiteral(mParserContext, type));
+                    error = true;
+                    break;
+                }
+                else if (mChar == '\\')
                 {
                     NextCharacter();
                     if (!ReadEscapedChar(mChar, out var nextChar))
                     {
                         ErrorLogger.LogError(new UnrecognizedEscapeSequence(mParserContext));
+                        error = true;
                     }
 
                     loadedString.Append(nextChar);
@@ -245,9 +248,13 @@ namespace BLang
                 }
             }
 
-            mCurrentToken.SetTokenData(loadedString.ToString(), eTokenType.String);
+            if (!error)
+            {
+                mCurrentToken.SetTokenData(loadedString.ToString(), type);
+            }
 
             NextCharacter();
+            return !error;
         }
 
         /// <summary>

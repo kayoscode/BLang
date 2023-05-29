@@ -1,110 +1,7 @@
-﻿namespace BLang.Error
+﻿using System.Diagnostics;
+
+namespace BLang.Error
 {
-    /// <summary>
-    /// All the different types of errors that can occur in the system.
-    /// </summary>
-    public enum eParseError
-    {
-        #region Tokenization errors
-
-        // Tokenization error series = 1000
-        [ParseError("Unexpected character", 1000)]
-        UnexpectedCharacter,
-
-        /// <summary>
-        /// When a floating point number doesn't match the expected format.
-        /// </summary>
-        [ParseError("Invalid Real Literal", 1001)]
-        InvalidRealLiteral,
-
-        /// <summary>
-        /// A character literal is formatted incorrectly. 
-        /// </summary>
-        [ParseError("Invalid character literal", 1002)]
-        InvalidCharacterLiteral,
-
-        /// <summary>
-        /// When a number is not formatted correctly for the compiler.
-        /// </summary>
-        [ParseError("Invalid number literal", 1003)]
-        InvalidNumberLiteral,
-
-        /// <summary>
-        /// If there is an unrecognized escape sequence in a char or string.
-        /// </summary>
-        [ParseError("Unrecognized escape sequence", 1004)]
-        UnrecognizedEscapeSequence
-
-        #endregion
-    }
-
-    public enum eErrorLevel
-    {
-        /// <summary>
-        /// Warnings do not affect compilation, but they can indicate a problem with the code.
-        /// </summary>
-        Warning,
-
-        /// <summary>
-        /// An error occurs when the parser can no longer form a binary from the input text, 
-        /// At the error level, the parser can continue to run and log more errors and warnings.
-        /// 1. Undefined identifiers
-        /// 2. Unexpected token
-        /// </summary>
-        Error,
-
-        /// <summary>
-        /// A critical error occurs when an error cannot be recovered from.
-        /// Examples of this include:
-        /// 1. Invalid token
-        /// 2. Some syntax errors
-        /// </summary>
-        CriticalError
-    }
-
-    /// <summary>
-    /// Class storing relevant information about the parser at any moment in time.
-    /// </summary>
-    public class ParserContext
-    {
-        /// <summary>
-        /// Standard constructor.
-        /// </summary>
-        public ParserContext()
-        {
-            // Copy the token over to a new token.
-            Token = new Tokenizer.Token();
-        }
-
-        // Symbol table
-        // Parser stack
-
-        // Scope context { namespace, class-ish thing, function }
-        public Tokenizer.Token Token { get; private set; }
-
-        public ReserveTable ReserveTable { get; } = new();
-        public TypeTable PrimitiveTypeTable { get; } = new();
-
-        public void AdvanceLineAndChar(char mChar)
-        {
-            // Adjust line and column counters as needed.
-            if (mChar == '\n')
-            {
-                CurrentLine++;
-                CurrentChar = 0;
-            }
-            else
-            {
-                CurrentChar++;
-            }
-        }
-
-        public int CurrentLine { get; private set; } = 1;
-        public int CurrentChar { get; private set; } = 0;
-
-        // Compiler flags { warn all, warn=error, etc }
-    }
-
     /// <summary>
     /// Base class which all error types can inherit from.
     /// can be logged and recovered from using various strategies.
@@ -139,7 +36,7 @@
         /// We are allowing this to be overridden since its possible
         /// an error can become a different error with a different context.
         /// </summary>
-        public abstract eParseError ErrorCode { get; }
+        public abstract eParseError ErrorType { get; }
 
         /// <summary>
         /// Base implementation of recover from error. Calls the child delegate if it makes sense to do so.
@@ -168,7 +65,7 @@
         public void PrintErrorMessage()
         {
             // TODO: file name.
-            Console.WriteLine($"{Level} {ErrorCode.ErrorName()} on Ln: {Context.Token.Line} Ch: {Context.Token.Char}");
+            Console.WriteLine($"{Level}[{ErrorType.ErrorCode()}] {ErrorType.Name()} on Ln: {Context.Token.Line} Ch: {Context.Token.Char}");
             Console.WriteLine(Message);
         }
     }
@@ -178,33 +75,95 @@
     /// </summary>
     public class ParseErrorAttribute : Attribute
     {
-        public string ErrorName { get; private set; }
-        public int ErrorCode { get; private set; }
+        public string ErrorName { get; }
+        public eParseErrorSeries ErrorSeries { get; }
+        public string Description { get; }
 
         /// <summary>
         /// Standard constructor.
         /// </summary>
         /// <param name="message"></param>
         /// <param name="code"></param>
-        public ParseErrorAttribute(string errName, int code)
+        public ParseErrorAttribute(string errName, eParseErrorSeries errorSeries, string description)
         {
             ErrorName = errName;
-            ErrorCode = code;
+            ErrorSeries = errorSeries;
+            Description = description;
+        }
+    }
+
+    public class ParseErrorSeriesAttribute : Attribute
+    {
+        public string SeriesPrefix { get; }
+        public string Description { get; }
+
+        public ParseErrorSeriesAttribute(string seriesPrefix, string description)
+        {
+            SeriesPrefix = seriesPrefix;
+            Description = description;
         }
     }
 
     public static class ParseErrorEnumUtils
     {
-        public static string ErrorName(this eParseError token)
+        static ParseErrorEnumUtils()
+        {
+            var currentErrCodes = new Dictionary<string, int>();
+
+            foreach (var errorSeries in Enum.GetValues<eParseErrorSeries>())
+            {
+                string prefix = errorSeries.Prefix();
+
+                if (currentErrCodes.ContainsKey(prefix))
+                {
+                    Trace.Assert(false, $"Prefix {prefix} has already been used by another series.");
+                }
+
+                currentErrCodes[errorSeries.Prefix()] = 1;
+            }
+
+            // Set up error code unique codes and verify that they are indeed unique.
+            foreach(var error in Enum.GetValues<eParseError>())
+            {
+                int nextCode = currentErrCodes[error.Series().Prefix()]++;
+                mErrorCodes[error] = $"{error.Series().Prefix()}{nextCode:D3}";
+            }
+        }
+
+        public static string Name(this eParseError token)
         {
             return mCachedAttributes.GetAttribute(token).ErrorName;
         }
 
-        public static int ErrorCode(this eParseError token)
+        public static eParseErrorSeries Series(this eParseError token)
         {
-            return mCachedAttributes.GetAttribute(token).ErrorCode;
+            return mCachedAttributes.GetAttribute(token).ErrorSeries;
+        }
+
+        public static string Description(this eParseError token)
+        {
+            return mCachedAttributes.GetAttribute(token).Description;
+        }
+
+        public static string ErrorCode(this eParseError token)
+        {
+            return mErrorCodes[token];
+        }
+
+        public static string Prefix(this eParseErrorSeries token)
+        {
+            return mErrorSeriesCachedAttributes.GetAttribute(token).SeriesPrefix;
+        }
+
+        public static string Description(this eParseErrorSeries token)
+        {
+            return mErrorSeriesCachedAttributes.GetAttribute(token).Description;
         }
 
         private static AttributeCacheHelper<ParseErrorAttribute, eParseError> mCachedAttributes = new();
+        private static AttributeCacheHelper<ParseErrorSeriesAttribute, eParseErrorSeries> 
+            mErrorSeriesCachedAttributes = new();
+
+        private static Dictionary<eParseError, string> mErrorCodes = new();
     }
 }
