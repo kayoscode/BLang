@@ -8,7 +8,7 @@ public class Program
         string fileName = "test-file.txt";
 
         ParserContext context = new();
-        Tokenizer tokenizer = new();
+        Tokenizer tokenizer = new(context);
 
         if (File.Exists(fileName))
         {
@@ -19,7 +19,7 @@ public class Program
             throw new FileNotFoundException();
         }
 
-        while (tokenizer.NextToken(context))
+        while (tokenizer.NextToken())
         {
             context.Token.PrintToken();
         }
