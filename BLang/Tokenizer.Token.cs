@@ -1,5 +1,8 @@
 ﻿namespace BLang
 {
+    /// <summary>
+    /// The different types of tokens which can appear in the code.
+    /// </summary>
     public enum eTokenType
     {
         ReserveWord,
@@ -9,15 +12,35 @@
         FloatingPoint,
         Integer,
         SyntaxToken,
-        Char
+        Char,
+        InvalidToken
     }
 
     public partial class Tokenizer
     {
+        /// <summary>
+        /// Class to store information about a token in the system. 
+        /// </summary>
         public class Token
         {
+            /// <summary>
+            /// Standard construtor.
+            /// </summary>
             public Token()
             {
+            }
+
+            /// <summary>
+            /// Copy constructor.
+            /// </summary>
+            /// <param name="other"></param>
+            public Token(Token other)
+            {
+                Lexeme = other.Lexeme;
+                Type = other.Type;
+                Line = other.Line;
+                Char = other.Char;
+                Code = other.Code;
             }
 
             /// <summary>
@@ -43,8 +66,8 @@
             /// </summary>
             public eTokenType Type { get; set; }
 
-            public int line { get; set; }
-            public int Col { get; set; }
+            public int Line { get; set; }
+            public int Char { get; set; }
 
             /// <summary>
             /// Stores more specific information about the token.
@@ -57,7 +80,7 @@
             /// </summary>
             public void PrintToken()
             {
-                Console.WriteLine($"\"{Lexeme}\"   [{Code}]: {line}, {Col} ({Type})");
+                Console.WriteLine($"\"{Lexeme}\"   [{Code}]: {Line}, {Char} ({Type})");
             }
         }
     }

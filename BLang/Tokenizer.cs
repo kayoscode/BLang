@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BLang.Error;
+using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -16,7 +17,7 @@ namespace BLang
             mChar = EOF;
 
             mCurrentLine = 1;
-            mCurrentCol = 0;
+            mCurrentChar = 0;
         }
 
         /// <summary>
@@ -24,70 +25,45 @@ namespace BLang
         /// </summary>
         /// <param name="nextToken"></param>
         /// <returns></returns>
-        public bool NextToken(Token nextToken)
+        public bool NextToken(ParserContext context)
         {
-            mCurrentToken = nextToken;
+            mCurrentToken = context.Token;
+
             TrimWhiteSpace();
 
             // Set the token starting position.
-            mCurrentToken.line = mCurrentLine;
-            mCurrentToken.Col = mCurrentCol;
+            mCurrentToken.SetTokenData(string.Empty, eTokenType.InvalidToken);
+            mCurrentToken.Line = mCurrentLine;
+            mCurrentToken.Char = mCurrentChar;
 
             // Read the keyword, identifier, constant, or valid symbol
             if (char.IsLetter(mChar) || mChar == '_')
             {
-                ReadIdentifierOrKeyword();
+                ReadIdentifierOrKeyword(context);
             }
             else if (char.IsNumber(mChar) || (mChar == '-' && char.IsNumber(PeekCharacter())))
             {
-                ReadNumber();
+                ReadNumber(context);
             }
             else if (mChar == '"')
             {
-                ReadString();
+                ReadString(context);
+            }
+            else if (mChar == '\'')
+            {
+                ReadCharacterLiteral(context);
             }
             else if (ReadCharKeyword())
             {
             }
-            else if (mChar == '\'')
-            {
-                char token;
-
-                NextCharacter();
-
-                if (mChar == '\\')
-                {
-                    NextCharacter();
-                    if (!ReadEscapedChar(mChar, out token))
-                    {
-                        Debugger.Break();
-                        // AddError();
-                    }
-
-                    NextCharacter();
-                }
-                else
-                {
-                    token = mChar;
-                }
-
-                NextCharacter();
-
-                if (mChar != '\'')
-                {
-                    Debugger.Break();
-                    //AddError("Expected '");
-                }
-
-                NextCharacter();
-
-                mCurrentToken.SetTokenData(string.Empty + token, eTokenType.Char);
-            }
             else
             {
-                // An error occurs in this case. 
-                // Move till we get to the next word, and log the error.
-                // TODO!
+                if (mChar != EOF)
+                {
+                    ErrorLogger.LogError(new UnexpectedCharacter(context));
+                    return true;
+                }
+
                 return false;
             }
 
@@ -96,10 +72,43 @@ namespace BLang
 
         #region Parsing utilities
 
+        private void ReadCharacterLiteral(ParserContext context)
+        {
+            char token;
+
+            NextCharacter();
+
+            if (mChar == '\\')
+            {
+                NextCharacter();
+                if (!ReadEscapedChar(mChar, out token))
+                {
+                    ErrorLogger.LogError(new UnrecognizedEscapeSequence(context));
+                    return;
+                }
+            }
+            else
+            {
+                token = mChar;
+            }
+
+            NextCharacter();
+
+            if (mChar != '\'')
+            {
+                ErrorLogger.LogError(new InvalidCharLiteral(context));
+                return;
+            }
+
+            NextCharacter();
+
+            mCurrentToken.SetTokenData(string.Empty + token, eTokenType.Char);
+        }
+
         /// <summary>
         /// Reads from the file either an identifier or keyword based on the reserve table.
         /// </summary>
-        private void ReadIdentifierOrKeyword()
+        private void ReadIdentifierOrKeyword(ParserContext context)
         {
             mCurrentToken.Lexeme = string.Empty + mChar;
             NextCharacter();
@@ -117,7 +126,7 @@ namespace BLang
                 }
             }
 
-            int reserveTableCode = mReserveTable.GetReserveCode(mCurrentToken.Lexeme);
+            int reserveTableCode = context.ReserveTable.GetReserveCode(mCurrentToken.Lexeme);
 
             if (reserveTableCode >= 0)
             {
@@ -126,7 +135,7 @@ namespace BLang
             }
             else
             {
-                int typeTableCode = mPrimitiveTypeTable.GetTypeCode(mCurrentToken.Lexeme);
+                int typeTableCode = context.PrimitiveTypeTable.GetTypeCode(mCurrentToken.Lexeme);
 
                 if (typeTableCode >= 0)
                 {
@@ -197,7 +206,7 @@ namespace BLang
                 character = '\v';
                 return true;
             }
-            else if (next == '\0')
+            else if (next == '0')
             {
                 character = '\0';
                 return true;
@@ -211,21 +220,21 @@ namespace BLang
         /// Reads a string and stores it in the token.
         /// </summary>
         /// <returns></returns>
-        public void ReadString()
+        public void ReadString(ParserContext context)
         {
             NextCharacter();
 
             StringBuilder loadedString = new StringBuilder();
 
-            while (mChar != '"')
+            while (mChar != '"' && mChar != EOF)
             {
                 if (mChar == '\\')
                 {
                     NextCharacter();
                     if (!ReadEscapedChar(mChar, out var nextChar))
                     {
-                        Debugger.Break();
-                        // TODO: ERROR CASE
+                        ErrorLogger.LogError(new UnrecognizedEscapeSequence(context));
+                        return;
                     }
 
                     loadedString.Append(nextChar);
@@ -246,7 +255,7 @@ namespace BLang
         /// <summary>
         /// Reads a number from the stream.
         /// </summary>
-        private void ReadNumber()
+        private void ReadNumber(ParserContext context)
         {
             StringBuilder lexeme = new StringBuilder(mChar);
 
@@ -257,6 +266,7 @@ namespace BLang
             }
 
             eTokenType tokenType = eTokenType.Integer;
+            int digitCount;
 
             // Load a hex number if that's what this is
             if (mChar == '0')
@@ -270,10 +280,18 @@ namespace BLang
                     NextCharacter();
 
                     // Load binary.
+                    digitCount = 0;
                     while (mChar == '0' || mChar == '1')
                     {
                         lexeme.Append(mChar);
                         NextCharacter();
+                        digitCount++;
+                    }
+
+                    if (digitCount == 0)
+                    {
+                        ErrorLogger.LogError(new InvalidNumberLiteral(context));
+                        return;
                     }
 
                     mCurrentToken.SetTokenData(lexeme.ToString(), tokenType);
@@ -284,12 +302,20 @@ namespace BLang
                     lexeme.Append(mChar);
                     NextCharacter();
 
+                    digitCount = 0;
                     while ((mChar >= '0' && mChar <= '9') ||
                            (mChar >= 'A' && mChar <= 'F') ||
                             mChar >= 'a' && mChar <= 'f')
                     {
                         lexeme.Append(mChar);
                         NextCharacter();
+                        digitCount++;
+                    }
+
+                    if (digitCount == 0)
+                    {
+                        ErrorLogger.LogError(new InvalidNumberLiteral(context));
+                        return;
                     }
 
                     mCurrentToken.SetTokenData(lexeme.ToString(), tokenType);
@@ -301,10 +327,18 @@ namespace BLang
                     NextCharacter();
 
                     // Load hex.
+                    digitCount = 0;
                     while ((mChar >= '0' && mChar <= '7'))
                     {
                         lexeme.Append(mChar);
                         NextCharacter();
+                        digitCount++;
+                    }
+
+                    if (digitCount == 0)
+                    {
+                        ErrorLogger.LogError(new InvalidNumberLiteral(context));
+                        return;
                     }
 
                     mCurrentToken.SetTokenData(lexeme.ToString(), tokenType);
@@ -312,10 +346,18 @@ namespace BLang
                 }
             }
 
+            digitCount = 0;
             while (char.IsNumber(mChar))
             {
                 lexeme.Append(mChar);
                 NextCharacter();
+                digitCount++;
+            }
+
+            if (digitCount == 0)
+            {
+                ErrorLogger.LogError(new InvalidNumberLiteral(context));
+                return;
             }
 
             // Handle a decimal.
@@ -324,10 +366,18 @@ namespace BLang
                 lexeme.Append(mChar);
                 NextCharacter();
 
+                digitCount = 0;
                 while (char.IsNumber(mChar))
                 {
                     lexeme.Append(mChar);
                     NextCharacter();
+                    digitCount++;
+                }
+
+                if (digitCount == 0)
+                {
+                    ErrorLogger.LogError(new InvalidRealLiteral(context));
+                    return;
                 }
 
                 tokenType = eTokenType.FloatingPoint;
@@ -345,13 +395,17 @@ namespace BLang
                     NextCharacter();
                 }
 
-                if (char.IsNumber(mChar))
+                digitCount = 0;
+                while (char.IsNumber(mChar))
                 {
-                    while (char.IsNumber(mChar))
-                    {
-                        lexeme.Append(mChar);
-                        NextCharacter();
-                    }
+                    lexeme.Append(mChar);
+                    NextCharacter();
+                    digitCount++;
+                }
+
+                if (digitCount == 0)
+                {
+                    ErrorLogger.LogError(new InvalidRealLiteral(context));
                 }
 
                 tokenType = eTokenType.FloatingPoint;
@@ -468,7 +522,7 @@ namespace BLang
         /// <returns></returns>
         private bool NextCharacter()
         {
-            if (mIndexInBuffer < mCurrentBuffer.Length)
+            if (mIndexInBuffer < mCurrentBufferLength)
             {
                 mChar = mCurrentBuffer[mIndexInBuffer++];
                 AdvanceLineAndCol();
@@ -477,6 +531,7 @@ namespace BLang
 
             if (!LoadNextBuffer())
             {
+                mChar = EOF;
                 return false;
             }
 
@@ -493,11 +548,11 @@ namespace BLang
             if (mChar == '\n')
             {
                 mCurrentLine++;
-                mCurrentCol = 0;
+                mCurrentChar = 0;
             }
             else
             {
-                mCurrentCol++;
+                mCurrentChar++;
             }
 
         }
@@ -509,21 +564,14 @@ namespace BLang
         /// <returns></returns>
         private char PeekCharacter()
         {
-            if (mIndexInBuffer < mCurrentBuffer.Length)
+            if (mIndexInBuffer < mCurrentBufferLength)
             {
                 return mCurrentBuffer[mIndexInBuffer];
             }
 
             if (!mStreamReader.EndOfStream)
             {
-                // Load a single character from the file stream.
-                Span<char> peekedCharacter = stackalloc char[1];
-                mStreamReader.ReadBlock(peekedCharacter);
-
-                // Reset the stream to make sure we aren't consuming.
-                mStreamReader.BaseStream.Position = mStreamReader.BaseStream.Position - 1;
-
-                return peekedCharacter[0];
+                return (char)mStreamReader.Peek();
             }
 
             return EOF;
@@ -542,7 +590,7 @@ namespace BLang
 
             try
             {
-                mStreamReader.ReadBlock(mCurrentBuffer, 0, BUFFER_SIZE);
+                mCurrentBufferLength = mStreamReader.ReadBlock(mCurrentBuffer, 0, BUFFER_SIZE);
             }
             catch
             {
@@ -555,11 +603,16 @@ namespace BLang
         #endregion
 
         const char EOF = '\0';
-        private const int BUFFER_SIZE = 1000;
+        private const int BUFFER_SIZE = 1;
 
         private StreamReader mStreamReader;
 
-        private char[] mCurrentBuffer = new char[BUFFER_SIZE];
+        private char[] mCurrentBuffer = new char[BUFFER_SIZE + 1];
+
+        /// <summary>
+        ///  The total number of valid bytes in the buffer. We should not read past this boundary.
+        /// </summary>
+        private int mCurrentBufferLength = 0;
         private int mIndexInBuffer;
         private char mChar;
 
@@ -573,7 +626,7 @@ namespace BLang
         /// <summary>
         /// Keep track of the current character we are on on that line.
         /// </summary>
-        private int mCurrentCol = 0;
+        private int mCurrentChar = 0;
 
         private IReadOnlyList<eOneCharSyntaxToken> mAllOneCharTokens =
             new List<eOneCharSyntaxToken>(Enum.GetValues<eOneCharSyntaxToken>());
@@ -581,8 +634,6 @@ namespace BLang
         private IReadOnlyList<eTwoCharSyntaxToken> mAllTwoCharTokens =
             new List<eTwoCharSyntaxToken>(Enum.GetValues<eTwoCharSyntaxToken>());
 
-        // TODO: these should eventually move.
-        private ReserveTable mReserveTable = new();
-        private TypeTable mPrimitiveTypeTable = new();
+        public ErrorLogger ErrorLogger { get; private set; } = new();
     }
 }

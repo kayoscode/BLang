@@ -1,4 +1,5 @@
 ﻿using BLang;
+using BLang.Error;
 
 public class Program
 {
@@ -6,7 +7,7 @@ public class Program
     {
         string fileName = "test-file.txt";
 
-        Tokenizer.Token token = new();
+        ParserContext context = new();
         Tokenizer tokenizer = new();
 
         if (File.Exists(fileName))
@@ -18,9 +19,9 @@ public class Program
             throw new FileNotFoundException();
         }
 
-        while (tokenizer.NextToken(token))
+        while (tokenizer.NextToken(context))
         {
-            token.PrintToken();
+            context.Token.PrintToken();
         }
     }
 }

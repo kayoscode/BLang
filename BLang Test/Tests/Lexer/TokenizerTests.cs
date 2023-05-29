@@ -1,5 +1,7 @@
-﻿using BLang.Syntax;
+﻿using BLang.Error;
+using BLang.Syntax;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
 namespace BLang.Tests
@@ -11,14 +13,17 @@ namespace BLang.Tests
         public void TestEmptyFile()
         {
             string emptyFile = "";
-            Tokenizer.Token token = new();
+            ParserContext context = new();
             var tokenizer = StringToTokenizer(emptyFile);
 
-            while (tokenizer.NextToken(token))
+            while (tokenizer.NextToken(context))
             {
                 // It should never get here since we have an empty file.
                 Assert.IsTrue(false);
             }
+
+            Assert.AreEqual(tokenizer.NextToken(context), false);
+            Assert.AreEqual(tokenizer.ErrorLogger.ErrorCount, 0);
         }
 
         [TestMethod]
@@ -31,16 +36,16 @@ namespace BLang.Tests
             var tokens = Enum.GetValues<eOneCharSyntaxToken>()
                 .Select(token => token.Code()).ToList();
 
-            Tokenizer.Token token = new();
+            ParserContext context = new();
             var tokenizer = StringToTokenizer(singleCharacters);
 
             int i = 0;
-            while (tokenizer.NextToken(token))
+            while (tokenizer.NextToken(context))
             {
-                Assert.AreEqual(token.Type, eTokenType.SyntaxToken);
+                Assert.AreEqual(context.Token.Type, eTokenType.SyntaxToken);
 
                 // Each token should be separated by a single space.
-                Assert.AreEqual(token.Code, tokens[i++]);
+                Assert.AreEqual(context.Token.Code, tokens[i++]);
             }
 
             // Make sure we did everything.
@@ -50,11 +55,14 @@ namespace BLang.Tests
             string fileEndEdgeCase = """>""";
             tokenizer = StringToTokenizer(fileEndEdgeCase);
 
-            while (tokenizer.NextToken(token))
+            while (tokenizer.NextToken(context))
             {
-                Assert.AreEqual(token.Type, eTokenType.SyntaxToken);
-                Assert.AreEqual(token.Code, eOneCharSyntaxToken.Gt.Code());
+                Assert.AreEqual(context.Token.Type, eTokenType.SyntaxToken);
+                Assert.AreEqual(context.Token.Code, eOneCharSyntaxToken.Gt.Code());
             }
+
+            Assert.AreEqual(tokenizer.NextToken(context), false);
+            Assert.AreEqual(tokenizer.ErrorLogger.ErrorCount, 0);
         }
 
         [TestMethod]
@@ -67,16 +75,16 @@ namespace BLang.Tests
             var tokens = Enum.GetValues<eTwoCharSyntaxToken>()
                 .Select(token => token.Code()).ToList();
 
-            Tokenizer.Token token = new();
+            ParserContext context = new();
             var tokenizer = StringToTokenizer(file);
 
             int i = 0;
-            while (tokenizer.NextToken(token))
+            while (tokenizer.NextToken(context))
             {
-                Assert.AreEqual(token.Type, eTokenType.SyntaxToken);
+                Assert.AreEqual(context.Token.Type, eTokenType.SyntaxToken);
 
                 // Each token should be separated by a single space.
-                Assert.AreEqual(token.Code, tokens[i++]);
+                Assert.AreEqual(context.Token.Code, tokens[i++]);
             }
 
             // Make sure we did everything.
@@ -86,11 +94,14 @@ namespace BLang.Tests
             string fileEndEdgeCase = """>>""";
             tokenizer = StringToTokenizer(fileEndEdgeCase);
 
-            while (tokenizer.NextToken(token))
+            while (tokenizer.NextToken(context))
             {
-                Assert.AreEqual(token.Type, eTokenType.SyntaxToken);
-                Assert.AreEqual(token.Code, eTwoCharSyntaxToken.LogicalShiftRight.Code());
+                Assert.AreEqual(context.Token.Type, eTokenType.SyntaxToken);
+                Assert.AreEqual(context.Token.Code, eTwoCharSyntaxToken.LogicalShiftRight.Code());
             }
+
+            Assert.AreEqual(tokenizer.NextToken(context), false);
+            Assert.AreEqual(tokenizer.ErrorLogger.ErrorCount, 0);
         }
 
         [TestMethod]
@@ -110,108 +121,98 @@ namespace BLang.Tests
                 10e2 -10e2
                 10.32e2 -10.32e20
                 10e-2 -10.2e-2
-
-                // TODO: these floats should fail, but they don't yet.
-                10. 10.e2
                 """;
 
-            Tokenizer.Token token = new();
+            ParserContext context = new();
             var tokenizer = StringToTokenizer(file);
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.Integer);
-            Assert.AreEqual(token.Lexeme, "1");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.Integer);
+            Assert.AreEqual(context.Token.Lexeme, "1");
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.Integer);
-            Assert.AreEqual(token.Lexeme, "2");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.Integer);
+            Assert.AreEqual(context.Token.Lexeme, "2");
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.Integer);
-            Assert.AreEqual(token.Lexeme, "3");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.Integer);
+            Assert.AreEqual(context.Token.Lexeme, "3");
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.Integer);
-            Assert.AreEqual(token.Lexeme, "4");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.Integer);
+            Assert.AreEqual(context.Token.Lexeme, "4");
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.Integer);
-            Assert.AreEqual(token.Lexeme, "5");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.Integer);
+            Assert.AreEqual(context.Token.Lexeme, "5");
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.Integer);
-            Assert.AreEqual(token.Lexeme, "12345");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.Integer);
+            Assert.AreEqual(context.Token.Lexeme, "12345");
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.Integer);
-            Assert.AreEqual(token.Lexeme, "-12345");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.Integer);
+            Assert.AreEqual(context.Token.Lexeme, "-12345");
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.SyntaxToken);
-            Assert.AreEqual(token.Lexeme, "-");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.SyntaxToken);
+            Assert.AreEqual(context.Token.Lexeme, "-");
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.Integer);
-            Assert.AreEqual(token.Lexeme, "-0x32");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.Integer);
+            Assert.AreEqual(context.Token.Lexeme, "-0x32");
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.Integer);
-            Assert.AreEqual(token.Lexeme, "-0b10");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.Integer);
+            Assert.AreEqual(context.Token.Lexeme, "-0b10");
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.Integer);
-            Assert.AreEqual(token.Lexeme, "0b10");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.Integer);
+            Assert.AreEqual(context.Token.Lexeme, "0b10");
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.Integer);
-            Assert.AreEqual(token.Lexeme, "-0o1");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.Integer);
+            Assert.AreEqual(context.Token.Lexeme, "-0o1");
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.Integer);
-            Assert.AreEqual(token.Lexeme, "0o1");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.Integer);
+            Assert.AreEqual(context.Token.Lexeme, "0o1");
 
             // Floats
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.FloatingPoint);
-            Assert.AreEqual(token.Lexeme, "10.2");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.FloatingPoint);
+            Assert.AreEqual(context.Token.Lexeme, "10.2");
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.FloatingPoint);
-            Assert.AreEqual(token.Lexeme, "-10.00001");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.FloatingPoint);
+            Assert.AreEqual(context.Token.Lexeme, "-10.00001");
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.FloatingPoint);
-            Assert.AreEqual(token.Lexeme, "10e2");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.FloatingPoint);
+            Assert.AreEqual(context.Token.Lexeme, "10e2");
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.FloatingPoint);
-            Assert.AreEqual(token.Lexeme, "-10e2");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.FloatingPoint);
+            Assert.AreEqual(context.Token.Lexeme, "-10e2");
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.FloatingPoint);
-            Assert.AreEqual(token.Lexeme, "10.32e2");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.FloatingPoint);
+            Assert.AreEqual(context.Token.Lexeme, "10.32e2");
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.FloatingPoint);
-            Assert.AreEqual(token.Lexeme, "-10.32e20");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.FloatingPoint);
+            Assert.AreEqual(context.Token.Lexeme, "-10.32e20");
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.FloatingPoint);
-            Assert.AreEqual(token.Lexeme, "10e-2");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.FloatingPoint);
+            Assert.AreEqual(context.Token.Lexeme, "10e-2");
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.FloatingPoint);
-            Assert.AreEqual(token.Lexeme, "-10.2e-2");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.FloatingPoint);
+            Assert.AreEqual(context.Token.Lexeme, "-10.2e-2");
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.FloatingPoint);
-            Assert.AreEqual(token.Lexeme, "10.");
-
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.FloatingPoint);
-            Assert.AreEqual(token.Lexeme, "10.e2");
-
-            // Note: test cases that should fail such as .2 and 2.
+            Assert.AreEqual(tokenizer.NextToken(context), false);
+            Assert.AreEqual(tokenizer.ErrorLogger.ErrorCount, 0);
         }
 
         [TestMethod]
@@ -225,28 +226,31 @@ namespace BLang.Tests
                 "\v \f \r\n"
                 """;
 
-            Tokenizer.Token token = new();
+            ParserContext context = new();
             var tokenizer = StringToTokenizer(file);
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.String);
-            Assert.AreEqual(token.Lexeme, "test string");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.String);
+            Assert.AreEqual(context.Token.Lexeme, "test string");
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.String);
-            Assert.AreEqual(token.Lexeme, "this is yet another test string // test");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.String);
+            Assert.AreEqual(context.Token.Lexeme, "this is yet another test string // test");
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.String);
-            Assert.AreEqual(token.Lexeme, "another");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.String);
+            Assert.AreEqual(context.Token.Lexeme, "another");
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.String);
-            Assert.AreEqual(token.Lexeme, "\n \\n \t");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.String);
+            Assert.AreEqual(context.Token.Lexeme, "\n \\n \t");
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.String);
-            Assert.AreEqual(token.Lexeme, "\v \f \r\n");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.String);
+            Assert.AreEqual(context.Token.Lexeme, "\v \f \r\n");
+
+            Assert.AreEqual(tokenizer.NextToken(context), false);
+            Assert.AreEqual(tokenizer.ErrorLogger.ErrorCount, 0);
         }
 
         [TestMethod]
@@ -258,28 +262,31 @@ namespace BLang.Tests
                 '\n'
                 """;
 
-            Tokenizer.Token token = new();
+            ParserContext context = new();
             var tokenizer = StringToTokenizer(file);
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.Char);
-            Assert.AreEqual(token.Lexeme, "a");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.Char);
+            Assert.AreEqual(context.Token.Lexeme, "a");
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.Char);
-            Assert.AreEqual(token.Lexeme, "b");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.Char);
+            Assert.AreEqual(context.Token.Lexeme, "b");
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.Char);
-            Assert.AreEqual(token.Lexeme, "n");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.Char);
+            Assert.AreEqual(context.Token.Lexeme, "n");
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.Char);
-            Assert.AreEqual(token.Lexeme, "\0");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.Char);
+            Assert.AreEqual(context.Token.Lexeme, "\0");
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.Char);
-            Assert.AreEqual(token.Lexeme, "\n");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.Char);
+            Assert.AreEqual(context.Token.Lexeme, "\n");
+
+            Assert.AreEqual(tokenizer.NextToken(context), false);
+            Assert.AreEqual(tokenizer.ErrorLogger.ErrorCount, 0);
         }
 
         [TestMethod]
@@ -293,16 +300,16 @@ namespace BLang.Tests
             var tokens = Enum.GetValues<eReserveWord>()
                 .Select(token => token.Code()).ToList();
 
-            Tokenizer.Token token = new();
+            ParserContext context = new ParserContext();
             var tokenizer = StringToTokenizer(file);
 
             int i = 0;
-            while (tokenizer.NextToken(token))
+            while (tokenizer.NextToken(context))
             {
-                Assert.AreEqual(token.Type, eTokenType.ReserveWord);
+                Assert.AreEqual(context.Token.Type, eTokenType.ReserveWord);
 
                 // Each token should be separated by a single space.
-                Assert.AreEqual(token.Code, tokens[i++]);
+                Assert.AreEqual(context.Token.Code, tokens[i++]);
             }
 
             // Make sure we did everything.
@@ -318,16 +325,19 @@ namespace BLang.Tests
             tokenizer = StringToTokenizer(file);
 
             i = 0;
-            while (tokenizer.NextToken(token))
+            while (tokenizer.NextToken(context))
             {
-                Assert.AreEqual(token.Type, eTokenType.Type);
+                Assert.AreEqual(context.Token.Type, eTokenType.Type);
 
                 // Each token should be separated by a single space.
-                Assert.AreEqual(token.Code, tokens[i++]);
+                Assert.AreEqual(context.Token.Code, tokens[i++]);
             }
 
             // Make sure we did everything.
             Assert.AreEqual(i, tokens.Count);
+
+            Assert.AreEqual(tokenizer.NextToken(context), false);
+            Assert.AreEqual(tokenizer.ErrorLogger.ErrorCount, 0);
         }
 
         [TestMethod]
@@ -341,52 +351,55 @@ namespace BLang.Tests
             var tokens = Enum.GetValues<eReserveWord>()
                 .Select(token => token.Code()).ToList();
 
-            Tokenizer.Token token = new();
+            ParserContext context = new();
             var tokenizer = StringToTokenizer(file);
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.Identifier);
-            Assert.AreEqual(token.Lexeme, "identifier");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.Identifier);
+            Assert.AreEqual(context.Token.Lexeme, "identifier");
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.SyntaxToken);
-            Assert.AreEqual(token.Lexeme, "==");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.SyntaxToken);
+            Assert.AreEqual(context.Token.Lexeme, "==");
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.Identifier);
-            Assert.AreEqual(token.Lexeme, "_value_idt");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.Identifier);
+            Assert.AreEqual(context.Token.Lexeme, "_value_idt");
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.SyntaxToken);
-            Assert.AreEqual(token.Lexeme, "=");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.SyntaxToken);
+            Assert.AreEqual(context.Token.Lexeme, "=");
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.String);
-            Assert.AreEqual(token.Lexeme, "string");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.String);
+            Assert.AreEqual(context.Token.Lexeme, "string");
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.SyntaxToken);
-            Assert.AreEqual(token.Lexeme, ";");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.SyntaxToken);
+            Assert.AreEqual(context.Token.Lexeme, ";");
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.ReserveWord);
-            Assert.AreEqual(token.Lexeme, "const");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.ReserveWord);
+            Assert.AreEqual(context.Token.Lexeme, "const");
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.Identifier);
-            Assert.AreEqual(token.Lexeme, "v");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.Identifier);
+            Assert.AreEqual(context.Token.Lexeme, "v");
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.SyntaxToken);
-            Assert.AreEqual(token.Lexeme, "=");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.SyntaxToken);
+            Assert.AreEqual(context.Token.Lexeme, "=");
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.Integer);
-            Assert.AreEqual(token.Lexeme, "32");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.Integer);
+            Assert.AreEqual(context.Token.Lexeme, "32");
 
-            tokenizer.NextToken(token);
-            Assert.AreEqual(token.Type, eTokenType.SyntaxToken);
-            Assert.AreEqual(token.Lexeme, ";");
+            tokenizer.NextToken(context);
+            Assert.AreEqual(context.Token.Type, eTokenType.SyntaxToken);
+            Assert.AreEqual(context.Token.Lexeme, ";");
+
+            Assert.AreEqual(tokenizer.NextToken(context), false);
+            Assert.AreEqual(tokenizer.ErrorLogger.ErrorCount, 0);
         }
 
         #region Utilities 
@@ -394,7 +407,7 @@ namespace BLang.Tests
         private Tokenizer StringToTokenizer(string input)
         {
             byte[] byteArray = Encoding.ASCII.GetBytes(input);
-            MemoryStream stream = new MemoryStream(byteArray);
+            MemoryStream stream = new(byteArray);
 
             var reader = new StreamReader(stream);
             var tokenizer = new Tokenizer();
