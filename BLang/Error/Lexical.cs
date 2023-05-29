@@ -92,11 +92,11 @@
         {
             get
             {
-                return $"Invalid floating point number";
+                return $"Invalid integer number";
             }
         }
 
-        public override eParseError ErrorCode => eParseError.InvalidCharacterLiteral;
+        public override eParseError ErrorCode => eParseError.InvalidNumberLiteral;
 
         public override eErrorLevel Level => eErrorLevel.Error;
 

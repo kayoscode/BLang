@@ -32,6 +32,8 @@ namespace BLang
 
             // Set the token starting position.
             mCurrentToken.SetTokenData(string.Empty, eTokenType.InvalidToken);
+            mCurrentToken.Line = mParserContext.CurrentLine;
+            mCurrentToken.Char = mParserContext.CurrentChar;
 
             // Read the keyword, identifier, constant, or valid symbol
             if (char.IsLetter(mChar) || mChar == '_')
@@ -58,6 +60,7 @@ namespace BLang
                 if (mChar != EOF)
                 {
                     ErrorLogger.LogError(new UnexpectedCharacter(mParserContext));
+                    NextCharacter();
                     return true;
                 }
 
@@ -339,9 +342,16 @@ namespace BLang
                     mCurrentToken.SetTokenData(lexeme.ToString(), tokenType);
                     return;
                 }
+                else
+                {
+                    digitCount = 1;
+                }
+            }
+            else
+            {
+                digitCount = 0;
             }
 
-            digitCount = 0;
             while (char.IsNumber(mChar))
             {
                 lexeme.Append(mChar);

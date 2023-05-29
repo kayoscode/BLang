@@ -25,36 +25,6 @@ namespace BLang.Tests
             Assert.AreEqual(tokenizer.ErrorLogger.ErrorCount, 0);
         }
 
-        [TestMethod] 
-        public void TestInvalidTokens()
-        {
-            string testFile = """
-                "\"test\""          // Valid quotes within quotes
-
-                // Invalid strings
-                'adf'               // Too many characters in char literal
-                '\7'                // Invalid escape sequence
-
-                // Invalid integers
-                0xx67              
-                0t32
-                006
-
-                // Invalid floats
-                .12                 // Invalid float
-                12.                 // Invalid float
-                10e-.12
-                10.e12
-                10.12e.12
-                .12e12
-                """;
-
-            var tokenizer = StringToTokenizer(testFile);
-            ParserContext context = tokenizer.ParserContext;
-
-            tokenizer.NextToken();
-        }
-
         [TestMethod]
         public void TestOneCharacterSyntaxTokens()
         {
@@ -136,12 +106,47 @@ namespace BLang.Tests
         }
 
         [TestMethod]
+        public void TestNumbersErrorCases()
+        {
+            string file = """
+                0xx1
+                .01 1.e12
+                """;
+
+            var tokenizer = StringToTokenizer(file);
+            ParserContext context = tokenizer.ParserContext;
+
+            tokenizer.NextToken();
+            Assert.AreEqual(context.Token.Type, eTokenType.InvalidToken);
+
+            // x1 will be created as an identifier at this point, continue
+            tokenizer.NextToken();
+
+            // This one is invalid because it needs a digit before the decimal place.
+            tokenizer.NextToken();
+            Assert.AreEqual(context.Token.Type, eTokenType.InvalidToken);
+
+            // Pull the 01 off.
+            tokenizer.NextToken();
+
+            // This should give an error as well since 1.x expects at least one digit.
+            tokenizer.NextToken();
+            Assert.AreEqual(context.Token.Type, eTokenType.InvalidToken);
+
+            // Pull off the e12 which should actually be an identifier.
+            tokenizer.NextToken();
+
+            // We should have logged three errors.
+            Assert.AreEqual(tokenizer.ErrorLogger.ErrorCount, 3);
+        }
+
+        [TestMethod]
         public void TestNumbers()
         {
             // Test basic integers.
             string file = """
-                // Basic integers.
-                1 2 3 4 5 12345 -12345 - -0x32
+                // Basic.
+                0 -0.0 00001 0001.1e10 1 2 3 4 5 12345 -12345 - -0x32
 
                 // Special integers.
                 -0b10 0b10
@@ -156,6 +161,22 @@ namespace BLang.Tests
 
             var tokenizer = StringToTokenizer(file);
             ParserContext context = tokenizer.ParserContext;
+
+            tokenizer.NextToken();
+            Assert.AreEqual(context.Token.Type, eTokenType.Integer);
+            Assert.AreEqual(context.Token.Lexeme, "0");
+
+            tokenizer.NextToken();
+            Assert.AreEqual(context.Token.Type, eTokenType.FloatingPoint);
+            Assert.AreEqual(context.Token.Lexeme, "-0.0");
+
+            tokenizer.NextToken();
+            Assert.AreEqual(context.Token.Type, eTokenType.Integer);
+            Assert.AreEqual(context.Token.Lexeme, "00001");
+
+            tokenizer.NextToken();
+            Assert.AreEqual(context.Token.Type, eTokenType.FloatingPoint);
+            Assert.AreEqual(context.Token.Lexeme, "0001.1e10");
 
             tokenizer.NextToken();
             Assert.AreEqual(context.Token.Type, eTokenType.Integer);
