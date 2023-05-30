@@ -39,7 +39,7 @@ namespace BLang.Syntax
             // Fill list of escape character replacements.
             foreach (var escapeCharacter in Enum.GetValues<eEscapeCharacter>())
             {
-                var inputChar = escapeCharacter.GetInputChar();
+                var inputChar = escapeCharacter.InputChar();
                 var resultChar = escapeCharacter.GetResultChar();
 
                 if (mEscapeCharacterReplacements.ContainsKey(inputChar))

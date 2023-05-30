@@ -16,7 +16,7 @@ namespace BLang
 
     public static class EscapeCharacterAttributeUtils
     {
-        public static char GetInputChar(this eEscapeCharacter token)
+        public static char InputChar(this eEscapeCharacter token)
         {
             return mCachedAttributes.GetAttribute(token).InputChar;
         }

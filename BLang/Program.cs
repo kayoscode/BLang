@@ -1,5 +1,6 @@
 ﻿using BLang;
 using BLang.SelfDocumentation;
+using BLang.SelfDocumenter;
 using BLang.Utils;
 using System.Security.Cryptography.X509Certificates;
 
@@ -13,6 +14,7 @@ public class Program
             var fileStream = new StreamWriter(docsFile);
 
             ErrorDocumenter.WriteDocumentation(fileStream);
+            EscapeCharacterDocumenter.WriteDocumentation(fileStream);
             fileStream.Close();
         }
 
