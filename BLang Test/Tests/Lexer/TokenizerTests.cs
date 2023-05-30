@@ -350,6 +350,7 @@ namespace BLang.Tests
                 'a' 'b' 'n'
                 '\0'
                 '\n'
+                '' // Empty character.
                 """;
 
             var tokenizer = StringToTokenizer(file);
@@ -375,8 +376,12 @@ namespace BLang.Tests
             Assert.AreEqual(context.Token.Type, eTokenType.Char);
             Assert.AreEqual(context.Token.Lexeme, "\n");
 
+            // The last token is am empty char and should give us an error.
+            tokenizer.NextToken();
+            Assert.AreEqual(context.Token.Type, eTokenType.InvalidToken);
+
             Assert.AreEqual(tokenizer.NextToken(), false);
-            Assert.AreEqual(tokenizer.ErrorLogger.ErrorCount, 0);
+            Assert.AreEqual(tokenizer.ErrorLogger.ErrorCount, 1);
         }
 
         [TestMethod]

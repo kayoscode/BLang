@@ -50,7 +50,14 @@
             A character literal must start with a single quote and include only one char.
             It must be terminated with a closing single quote.
             """)]
-        InvalidCharacterLiteral,
+        TooManyCharactersInCharLiteral,
+
+        [ParseError("Empty character literal", eParseErrorSeries.Tokenization, 
+            """
+            A character literal is formatted incorrectly. It must have exactly one
+            character within the single quotes.
+            """)]
+        EmptyCharLiteral,
 
         /// <summary>
         /// When a number is not formatted correctly for the compiler.

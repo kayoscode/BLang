@@ -57,9 +57,9 @@ namespace BLang.Error
         }
     }
 
-    public class InvalidCharLiteral : ParseError
+    public class TooManyCharactersInCharLiteral : ParseError
     {
-        public InvalidCharLiteral(ParserContext context)
+        public TooManyCharactersInCharLiteral(ParserContext context)
             : base(context)
         {
         }
@@ -72,7 +72,33 @@ namespace BLang.Error
             }
         }
 
-        public override eParseError ErrorType => eParseError.InvalidCharacterLiteral;
+        public override eParseError ErrorType => eParseError.TooManyCharactersInCharLiteral;
+
+        public override eErrorLevel Level => eErrorLevel.Error;
+
+        protected override bool ChildRecoverFromError()
+        {
+            // Get tokens until we reach the end of the line, or another single quote.
+            return true;
+        }
+    }
+
+    public class EmptyCharLiteral : ParseError
+    {
+        public EmptyCharLiteral(ParserContext context)
+            : base(context)
+        {
+        }
+
+        protected override string Message
+        {
+            get
+            {
+                return $"Too few characters in char literal";
+            }
+        }
+
+        public override eParseError ErrorType => eParseError.EmptyCharLiteral;
 
         public override eErrorLevel Level => eErrorLevel.Error;
 

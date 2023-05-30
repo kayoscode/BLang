@@ -1,10 +1,7 @@
 ﻿using BLang.Error;
+using BLang.Syntax;
 using BLang.Utils;
-using System;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Text;
-using System.Xml;
 
 namespace BLang
 {
@@ -79,9 +76,14 @@ namespace BLang
             if (ReadStringHelper('\'', eTokenType.Char))
             {
                 // Must have only one character to be a valid char.
-                if (mCurrentToken.Lexeme.Length != 1)
+                if (mCurrentToken.Lexeme.Length > 1)
                 {
-                    ErrorLogger.LogError(new InvalidCharLiteral(mParserContext));
+                    ErrorLogger.LogError(new TooManyCharactersInCharLiteral(mParserContext));
+                    mCurrentToken.Type = eTokenType.InvalidToken;
+                }
+                else if(mCurrentToken.Lexeme.Length == 0)
+                {
+                    ErrorLogger.LogError(new EmptyCharLiteral(mParserContext));
                     mCurrentToken.Type = eTokenType.InvalidToken;
                 }
             }
@@ -138,59 +140,8 @@ namespace BLang
         /// <returns></returns>
         private bool ReadEscapedChar(char next, out char character)
         {
-            if (next == '\'')
+            if (EscapeCharacterUtils.TryGetEscapeCharacter(next, out character))
             {
-                character = '\'';
-                return true;
-            }
-            if (next == '"')
-            {
-                character = '"';
-                return true;
-            }
-            else if (next == '\\')
-            {
-                character = '\\';
-                return true;
-            }
-            else if (next == 'n')
-            {
-                character = '\n';
-                return true;
-            }
-            else if (next == 'r')
-            {
-                character = '\r';
-                return true;
-            }
-            else if (next == 't')
-            {
-                character = '\t';
-                return true;
-            }
-            else if (next == 'b')
-            {
-                character = '\b';
-                return true;
-            }
-            else if (next == 'f')
-            {
-                character = '\f';
-                return true;
-            }
-            else if (next == 'a')
-            {
-                character = '\a';
-                return true;
-            }
-            else if (next == 'v')
-            {
-                character = '\v';
-                return true;
-            }
-            else if (next == '0')
-            {
-                character = '\0';
                 return true;
             }
 
