@@ -1,6 +1,5 @@
-﻿using BLang.Utils;
-using System.Reflection.Metadata.Ecma335;
-using System.Runtime.Intrinsics.X86;
+﻿using BLang.Error;
+using BLang.Utils;
 
 namespace BLang
 {
@@ -72,8 +71,8 @@ namespace BLang
                 // AddError() fatal
             }
 
-            // TODO: theres more creiteria
-            if (mAtEOF)
+            if (mAtEOF && 
+                ErrorLogger.ErrorCount == 0)
             {
                 Console.WriteLine("File parsed to completion");
             }
@@ -286,6 +285,10 @@ namespace BLang
             {
                 AdvanceToken();
             }
+            else
+            {
+                // AddError();
+            }
 
             LogExitNonTerminal(eNonTerminal.OptionalType);
         }
@@ -322,7 +325,7 @@ namespace BLang
             }
             else
             {
-                // AddError
+                // AddError();
             }
 
             LogExitNonTerminal(eNonTerminal.Expression);
@@ -380,5 +383,7 @@ namespace BLang
         private Tokenizer mTokenizer;
         private Tokenizer.Token mToken;
         private bool mAtEOF = false;
+
+        public ErrorLogger ErrorLogger => ParserContext.ErrorLogger;
     }
 }

@@ -18,10 +18,15 @@
         /// <param name="error"></param>
         public void LogError(ParseError error)
         {
+            mErrors.Add(error);
+
             error.PrintErrorMessage();
             ErrorCount++;
         }
 
         public int ErrorCount { get; private set; }
+
+        public IReadOnlyList<ParseError> Errors => mErrors;
+        private List<ParseError> mErrors { get; } = new();
     }
 }

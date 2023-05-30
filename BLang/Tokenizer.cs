@@ -110,7 +110,7 @@ namespace BLang
                 }
             }
 
-            int reserveTableCode = mParserContext.ReserveTable.GetReserveCode(mCurrentToken.Lexeme);
+            int reserveTableCode = ParserContext.ReserveTable.GetReserveCode(mCurrentToken.Lexeme);
 
             if (reserveTableCode >= 0)
             {
@@ -119,7 +119,7 @@ namespace BLang
             }
             else
             {
-                int typeTableCode = mParserContext.PrimitiveTypeTable.GetTypeCode(mCurrentToken.Lexeme);
+                int typeTableCode = ParserContext.PrimitiveTypeTable.GetTypeCode(mCurrentToken.Lexeme);
 
                 if (typeTableCode >= 0)
                 {
@@ -575,6 +575,6 @@ namespace BLang
         private IReadOnlyList<eTwoCharSyntaxToken> mAllTwoCharTokens =
             new List<eTwoCharSyntaxToken>(Enum.GetValues<eTwoCharSyntaxToken>());
 
-        public ErrorLogger ErrorLogger { get; private set; } = new();
+        public ErrorLogger ErrorLogger => ParserContext.ErrorLogger;
     }
 }
