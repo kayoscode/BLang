@@ -32,6 +32,8 @@
     {
         [OneCharSyntaxToken(',')]
         Comma,
+        [OneCharSyntaxToken('.')]
+        Period,
         [OneCharSyntaxToken('~')]
         Compliment,
         [OneCharSyntaxToken('*')]
@@ -41,13 +43,13 @@
         [OneCharSyntaxToken(')')]
         ClosePar,
         [OneCharSyntaxToken('{')]
-        OpenBrack,
-        [OneCharSyntaxToken('}')]
-        CloseBrack,
-        [OneCharSyntaxToken('[')]
         OpenBrace,
-        [OneCharSyntaxToken(']')]
+        [OneCharSyntaxToken('}')]
         CloseBrace,
+        [OneCharSyntaxToken('[')]
+        OpenBrack,
+        [OneCharSyntaxToken(']')]
+        CloseBrack,
         [OneCharSyntaxToken('&')]
         And,
         [OneCharSyntaxToken('|')]
@@ -57,9 +59,9 @@
         [OneCharSyntaxToken('!')]
         Not,
         [OneCharSyntaxToken('>')]
-        Gt,
+        CloseAngleBrace,
         [OneCharSyntaxToken('<')]
-        Lt,
+        OpenAngleBrace,
         [OneCharSyntaxToken(':')]
         Colon,
         [OneCharSyntaxToken(';')]

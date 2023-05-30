@@ -24,8 +24,8 @@
 
     public static class SyntaxTokenAttributeData
     {
-        private const int ONE_CHAR_TOKEN_START = 1000;
-        private const int TWO_CHAR_TOKEN_START = 2000;
+        private const int ONE_CHAR_TOKEN_START = 2000;
+        private const int TWO_CHAR_TOKEN_START = 3000;
 
         public static char Char(this eOneCharSyntaxToken token)
         {

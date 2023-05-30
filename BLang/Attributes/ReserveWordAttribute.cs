@@ -16,7 +16,7 @@
     public static class ReserveTokenAttributeData
     {
         // Reserve words are the first codes in the set.
-        private const int RESERVE_CODE_OFFSET = 0;
+        private const int RESERVE_CODE_OFFSET = 1000;
 
         public static string ReserveWord(this eReserveWord token)
         {

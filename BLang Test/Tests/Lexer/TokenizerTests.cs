@@ -29,9 +29,12 @@ namespace BLang.Tests
         [TestMethod]
         public void TestOneCharacterSyntaxTokens()
         {
-            string singleCharacters = """
-                , ~ * ( ) { } [ ] & | ^ ! > < : ; = - + / %
-                """;
+            string singleCharacters = "";
+
+            foreach (var token in Enum.GetValues<eOneCharSyntaxToken>())
+            {
+                singleCharacters += "" + token.Char() + " ";
+            }
 
             var tokens = Enum.GetValues<eOneCharSyntaxToken>()
                 .Select(token => token.Code()).ToList();
@@ -59,7 +62,7 @@ namespace BLang.Tests
             while (tokenizer.NextToken())
             {
                 Assert.AreEqual(context.Token.Type, eTokenType.SyntaxToken);
-                Assert.AreEqual(context.Token.Code, eOneCharSyntaxToken.Gt.Code());
+                Assert.AreEqual(context.Token.Code, eOneCharSyntaxToken.CloseAngleBrace.Code());
             }
 
             Assert.AreEqual(tokenizer.NextToken(), false);
@@ -69,9 +72,11 @@ namespace BLang.Tests
         [TestMethod]
         public void TestTwoCharacterSyntaxTokens()
         {
-            string file = """
-                >= <= == != && || << >> =>
-                """;
+            string file = "";
+            foreach (var token in Enum.GetValues<eTwoCharSyntaxToken>())
+            {
+                file += "" + token.Char1() + (char)token.Char2() + " ";
+            }
 
             var tokens = Enum.GetValues<eTwoCharSyntaxToken>()
                 .Select(token => token.Code()).ToList();
@@ -115,7 +120,7 @@ namespace BLang.Tests
 
                 // Too many chars in char literal
                 'aasdf "asd"'
-                var
+                mod
 
                 // Invalid strings
                 "text \6asd"    // Invalid escape sequence
@@ -138,27 +143,28 @@ namespace BLang.Tests
             // x1 will be created as an identifier at this point, continue
             tokenizer.NextToken();
 
-            // This one is invalid because it needs a digit before the decimal place.
             tokenizer.NextToken();
-            Assert.AreEqual(context.Token.Type, eTokenType.InvalidToken);
+            Assert.AreEqual(context.Token.Type, eTokenType.SyntaxToken);
+
+            tokenizer.NextToken();
+            Assert.AreEqual(context.Token.Type, eTokenType.Integer);
 
             // Pull the 01 off.
             tokenizer.NextToken();
+            Assert.AreEqual(context.Token.Type, eTokenType.InvalidToken);
 
             // This should give an error as well since 1.x expects at least one digit.
             tokenizer.NextToken();
-            Assert.AreEqual(context.Token.Type, eTokenType.InvalidToken);
+            Assert.AreEqual(context.Token.Type, eTokenType.Identifier);
 
             // Pull off the e12 which should actually be an identifier.
-            tokenizer.NextToken();
-
             tokenizer.NextToken();
             Assert.AreEqual(context.Token.Type, eTokenType.InvalidToken);
 
             // After the error case at the top, the char should fail, but the thing below it should be fine.
             tokenizer.NextToken();
             Assert.AreEqual(context.Token.Type, eTokenType.ReserveWord);
-            Assert.AreEqual(context.Token.Lexeme, "var");
+            Assert.AreEqual(context.Token.Lexeme, eReserveWord.Module.ReserveWord());
 
             tokenizer.NextToken();
             Assert.AreEqual(context.Token.Type, eTokenType.InvalidToken);
@@ -175,7 +181,7 @@ namespace BLang.Tests
             Assert.AreEqual(context.Token.Type, eTokenType.InvalidToken);
 
             // We should have logged three errors.
-            Assert.AreEqual(tokenizer.ErrorLogger.ErrorCount, 8);
+            Assert.AreEqual(tokenizer.ErrorLogger.ErrorCount, 7);
         }
 
         [TestMethod]
@@ -387,10 +393,11 @@ namespace BLang.Tests
         [TestMethod]
         public void TestReserveWords()
         {
-            string file = """
-                export import var true false const return
-                sizeof entrypt fn break continue if else for while
-                """;
+            string file = "";
+            foreach (var token in Enum.GetValues<eReserveWord>())
+            {
+                file += token.ReserveWord() + " ";
+            }
 
             var tokens = Enum.GetValues<eReserveWord>()
                 .Select(token => token.Code()).ToList();
@@ -410,9 +417,12 @@ namespace BLang.Tests
             // Make sure we did everything.
             Assert.AreEqual(i, tokens.Count);
 
-            file = """
-                i8 i16 i32 i64 bool f32 f64
-                """;
+            file = "";
+
+            foreach (var token in Enum.GetValues<ePrimitiveType>())
+            {
+                file += token.Name() + " ";
+            }
 
             tokens = Enum.GetValues<ePrimitiveType>()
                 .Select(token => token.Code()).ToList();

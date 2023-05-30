@@ -20,25 +20,19 @@ public class Program
 
         string fileName = "test-file.txt";
 
-        ParserContext context = new();
-        Tokenizer tokenizer = new(context);
+        Parser parser = new Parser();
 
         if (File.Exists(fileName))
         {
-            var writer = new StreamReader(fileName);
+            var reader = new StreamReader(fileName);
 
             try
             {
-                tokenizer.SetStream(writer);
-
-                while (tokenizer.NextToken())
-                {
-                    context.Token.PrintToken();
-                }
+                parser.ParseFile(reader);
             }
             finally
             {
-                writer.Close();
+                reader.Close();
             }
         }
         else
