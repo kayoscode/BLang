@@ -13,7 +13,11 @@
             VariableInit,
             VariableDeclaration,
             OptionalType,
+            RequiredType,
             Expression,
+            OptionalCalleeParams,
+            RequiredCalleeParams,
+            CodeBlock,
         }
     }
 }

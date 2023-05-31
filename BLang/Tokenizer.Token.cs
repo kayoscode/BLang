@@ -85,12 +85,12 @@
             /// </summary>
             public void PrintToken()
             {
-                Console.WriteLine($"\"{Lexeme}\"   [{Code}]: {Line}, {Char} ({Type})");
+                Console.WriteLine($"\"{Lexeme}\" [{Code}]: {Line}, {Char} ({Type})");
             }
 
             public void PrintTokenShort()
             {
-                Console.WriteLine($"[{Code:D4}] \"{Lexeme}\")");
+                Console.WriteLine($"[{Code:D4}] \"{Lexeme}\"");
             }
         }
     }

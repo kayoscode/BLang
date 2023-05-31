@@ -1,5 +1,7 @@
 ﻿using BLang.Error;
 using BLang.Utils;
+using System.Diagnostics;
+using System.Linq.Expressions;
 
 namespace BLang
 {
@@ -69,6 +71,7 @@ namespace BLang
             else
             {
                 // AddError() fatal
+                Debugger.Break();
             }
 
             if (mAtEOF && 
@@ -98,6 +101,7 @@ namespace BLang
             else
             {
                 // AddError() fatal
+                Debugger.Break();
             }
 
             LogExitNonTerminal(eNonTerminal.File);
@@ -129,6 +133,7 @@ namespace BLang
             if (!identifierFound)
             {
                 // AddError() and recover;
+                Debugger.Break();
             }
 
             // An import statement must end with a semicolon.
@@ -139,6 +144,7 @@ namespace BLang
             else
             {
                 // AddError() and recover;
+                Debugger.Break();
             }
 
             LogExitNonTerminal(eNonTerminal.ImportStatement);
@@ -159,6 +165,7 @@ namespace BLang
             else
             {
                 // AddError (modules must have names)
+                Debugger.Break();
             }
 
             if (mToken.Code == eOneCharSyntaxToken.OpenBrace.Code())
@@ -177,11 +184,13 @@ namespace BLang
                 else
                 {
                     // AddError()
+                    Debugger.Break();
                 }
             }
             else
             {
                 // AddError() 
+                Debugger.Break();
             }
 
             LogExitNonTerminal(eNonTerminal.Module);
@@ -214,7 +223,106 @@ namespace BLang
         {
             LogEnterNonTerminal(eNonTerminal.Function);
             AdvanceToken();
+
+            if (mToken.Type == eTokenType.Identifier)
+            {
+                AdvanceToken();
+                if (mToken.Code == eOneCharSyntaxToken.Colon.Code())
+                {
+                    OptionalType();
+                }
+
+                if (mToken.Code == eOneCharSyntaxToken.OpenPar.Code())
+                {
+                    AdvanceToken();
+                    CalleeParams(false);
+
+                    if (mToken.Code == eOneCharSyntaxToken.ClosePar.Code())
+                    {
+                        AdvanceToken();
+                        CodeBlock();
+                    }
+                    else {
+                        // AddError();
+                        Debugger.Break();
+                    }
+                }
+                else
+                {
+                    // AddError();
+                    Debugger.Break();
+                }
+            }
+            else
+            {
+                // AddError();
+                Debugger.Break();
+            }
+
             LogExitNonTerminal(eNonTerminal.Function);
+        }
+
+        private void CodeBlock()
+        {
+            LogEnterNonTerminal(eNonTerminal.CodeBlock);
+
+            if (mToken.Code == eTwoCharSyntaxToken.Arrow.Code())
+            {
+                AdvanceToken();
+                // Single line code block.
+                Expression();
+
+                if (mToken.Code == eOneCharSyntaxToken.Semi.Code())
+                {
+                    AdvanceToken();
+                }
+                else
+                {
+                    // AddError();
+                    Debugger.Break();
+                }
+            }
+            else if (mToken.Code == eOneCharSyntaxToken.OpenBrace.Code())
+            {
+                // Multiline block ending with a close brace.
+                AdvanceToken();
+
+                if (mToken.Code == eOneCharSyntaxToken.CloseBrace.Code())
+                {
+                    AdvanceToken();
+                }
+            }
+            else
+            {
+                // AddError()
+                Debugger.Break();
+            }
+
+            LogEnterNonTerminal(eNonTerminal.CodeBlock);
+        }
+
+        private void CalleeParams(bool required)
+        {
+            LogEnterNonTerminal(required? eNonTerminal.RequiredCalleeParams : eNonTerminal.OptionalCalleeParams);
+
+            if (mToken.Type == eTokenType.Identifier)
+            {
+                AdvanceToken();
+                RequiredType();
+
+                if (mToken.Code == eOneCharSyntaxToken.Comma.Code())
+                {
+                    AdvanceToken();
+                    CalleeParams(true);
+                }
+            }
+            else if (required)
+            {
+                // AddError();
+                Debugger.Break();
+            }
+
+            LogExitNonTerminal(required? eNonTerminal.RequiredCalleeParams : eNonTerminal.OptionalCalleeParams);
         }
 
         /// <summary>
@@ -256,6 +364,7 @@ namespace BLang
                 else
                 {
                     // AddError -> theyre gonna need to specify an assignment.
+                    Debugger.Break();
                 }
 
                 // Now it must end with a semicolon.
@@ -266,11 +375,13 @@ namespace BLang
                 else
                 {
                     // AddError
+                    Debugger.Break();
                 }
             }
             else
             {
                 // LogError -> expected identifier.
+                Debugger.Break();
             }
 
             LogExitNonTerminal(eNonTerminal.VariableCreation);
@@ -288,9 +399,36 @@ namespace BLang
             else
             {
                 // AddError();
+                Debugger.Break();
             }
 
             LogExitNonTerminal(eNonTerminal.OptionalType);
+        }
+
+        private void RequiredType()
+        {
+            LogEnterNonTerminal(eNonTerminal.RequiredType);
+
+            if (mToken.Code == eOneCharSyntaxToken.Colon.Code())
+            {
+                AdvanceToken();
+                if (mToken.Type == eTokenType.Type)
+                {
+                    AdvanceToken();
+                }
+                else
+                {
+                    // AddError();
+                    Debugger.Break();
+                }
+            }
+            else
+            {
+                // AddError();
+                Debugger.Break();
+            }
+
+            LogExitNonTerminal(eNonTerminal.RequiredType);
         }
 
         /// <summary>
@@ -312,20 +450,24 @@ namespace BLang
                 else
                 {
                     // AddError
+                    Debugger.Break();
                 }
-            }
-
-            if (mToken.Type == eTokenType.Identifier ||
-                mToken.Type == eTokenType.Integer ||
-                mToken.Type == eTokenType.FloatingPoint ||
-                mToken.Type == eTokenType.Char ||
-                mToken.Type == eTokenType.String)
-            {
-                AdvanceToken();
             }
             else
             {
-                // AddError();
+                if (mToken.Type == eTokenType.Identifier ||
+                    mToken.Type == eTokenType.Integer ||
+                    mToken.Type == eTokenType.FloatingPoint ||
+                    mToken.Type == eTokenType.Char ||
+                    mToken.Type == eTokenType.String)
+                {
+                    AdvanceToken();
+                }
+                else
+                {
+                    // AddError();
+                    Debugger.Break();
+                }
             }
 
             LogExitNonTerminal(eNonTerminal.Expression);
