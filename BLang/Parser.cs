@@ -1,7 +1,6 @@
 ﻿using BLang.Error;
 using BLang.Utils;
 using System.Diagnostics;
-using System.Linq.Expressions;
 
 namespace BLang
 {
@@ -113,37 +112,30 @@ namespace BLang
         /// </summary>
         private void ImportStatement()
         {
-            bool identifierFound = false;
-
             LogEnterNonTerminal(eNonTerminal.ImportStatement);
             AdvanceToken();
 
-            while (mToken.Type == eTokenType.Identifier && !mAtEOF)
+            if (mToken.Type == eTokenType.Identifier)
             {
-                identifierFound = true;
                 AdvanceToken();
 
                 if (mToken.Code == eOneCharSyntaxToken.Period.Code())
                 {
+                    ImportStatement();
+                }
+                else if(mToken.Code == eOneCharSyntaxToken.Semi.Code())
+                {
                     AdvanceToken();
                 }
-            }
-
-            // There must be at least one identifier to qualify as a module.
-            if (!identifierFound)
-            {
-                // AddError() and recover;
-                Debugger.Break();
-            }
-
-            // An import statement must end with a semicolon.
-            if (mToken.Code == eOneCharSyntaxToken.Semi.Code())
-            {
-                AdvanceToken();
+                else
+                {
+                    // AddError();
+                    Debugger.Break();
+                }
             }
             else
             {
-                // AddError() and recover;
+                // AddError();
                 Debugger.Break();
             }
 
@@ -307,16 +299,33 @@ namespace BLang
         }
 
         /// <summary>
-        /// Code that is converted to instructions in the text segmnet.
+        /// Code that is converted to instructions in the text segment.
+        /// List<Statement>
         /// </summary>
         private void StatementList()
         {
+            //while ()
             LogEnterNonTerminal(eNonTerminal.StatementList);
             LogExitNonTerminal(eNonTerminal.StatementList);
         }
 
+        private bool IsStatementToken()
+        {
+            return mToken.Code == eReserveWord.Let.Code() ||        // Varaible creation.
+                   // Logic statement
+                   mToken.Code == eReserveWord.If.Code() ||
+                   // Loop statement
+                   mToken.Code == eReserveWord.While.Code() ||
+                   mToken.Code == eReserveWord.For.Code() ||
+                   // Function call
+                   mToken.Type == eTokenType.Identifier ||
+                   // Return statement
+                   mToken.Code == eReserveWord.Return.Code();
+        }
+
         /// <summary>
         /// A single statement. Each one ends with a semicolon.
+        /// Statement: VariableCreation | LogicalStatement | LoopStatement | FunctionCall | ReturnStatement
         /// </summary>
         private void Statement()
         {
