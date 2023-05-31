@@ -291,6 +291,11 @@ namespace BLang
                 {
                     AdvanceToken();
                 }
+                else
+                {
+                    // AddError();
+                    Debugger.Break();
+                }
             }
             else
             {
@@ -299,6 +304,24 @@ namespace BLang
             }
 
             LogEnterNonTerminal(eNonTerminal.CodeBlock);
+        }
+
+        /// <summary>
+        /// Code that is converted to instructions in the text segmnet.
+        /// </summary>
+        private void StatementList()
+        {
+            LogEnterNonTerminal(eNonTerminal.StatementList);
+            LogExitNonTerminal(eNonTerminal.StatementList);
+        }
+
+        /// <summary>
+        /// A single statement. Each one ends with a semicolon.
+        /// </summary>
+        private void Statement()
+        {
+            LogEnterNonTerminal(eNonTerminal.Statement);
+            LogExitNonTerminal(eNonTerminal.Statement);
         }
 
         private void CalleeParams(bool required)
@@ -341,7 +364,6 @@ namespace BLang
 
                 if (mToken.Code == eOneCharSyntaxToken.Colon.Code())
                 {
-                    // TODO: definitely need to work out whether im advancing 
                     // the token before or after calling the method.
                     OptionalType();
 

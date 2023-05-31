@@ -18,6 +18,8 @@
             OptionalCalleeParams,
             RequiredCalleeParams,
             CodeBlock,
+            StatementList,
+            Statement
         }
     }
 }
