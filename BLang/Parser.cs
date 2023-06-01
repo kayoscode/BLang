@@ -1,5 +1,6 @@
 ﻿using BLang.Error;
 using BLang.Utils;
+using System.ComponentModel;
 using System.Diagnostics;
 
 namespace BLang
@@ -232,7 +233,30 @@ namespace BLang
                     if (mToken.Code == eOneCharSyntaxToken.ClosePar.Code())
                     {
                         AdvanceToken();
-                        CodeBlock();
+
+                        if (mToken.Code == eTwoCharSyntaxToken.Arrow.Code())
+                        {
+                            ExpressionCodeBlock();
+                            
+                            if (mToken.Code == eOneCharSyntaxToken.Semi.Code())
+                            {
+                                AdvanceToken();
+                            }
+                            else
+                            {
+                                // AddError();
+                                Debugger.Break();
+                            }
+                        }
+                        else if (mToken.Code == eOneCharSyntaxToken.OpenBrace.Code())
+                        {
+                            CodeBlock();
+                        }
+                        else
+                        {
+                            // AddError.
+                            Debugger.Break();
+                        }
                     }
                     else {
                         // AddError();
@@ -258,26 +282,11 @@ namespace BLang
         {
             LogEnterNonTerminal(eNonTerminal.CodeBlock);
 
-            if (mToken.Code == eTwoCharSyntaxToken.Arrow.Code())
-            {
-                AdvanceToken();
-                // Single line code block.
-                Expression();
-
-                if (mToken.Code == eOneCharSyntaxToken.Semi.Code())
-                {
-                    AdvanceToken();
-                }
-                else
-                {
-                    // AddError();
-                    Debugger.Break();
-                }
-            }
-            else if (mToken.Code == eOneCharSyntaxToken.OpenBrace.Code())
+            if (mToken.Code == eOneCharSyntaxToken.OpenBrace.Code())
             {
                 // Multiline block ending with a close brace.
                 AdvanceToken();
+                StatementList();
 
                 if (mToken.Code == eOneCharSyntaxToken.CloseBrace.Code())
                 {
@@ -299,6 +308,21 @@ namespace BLang
         }
 
         /// <summary>
+        /// A codeblock that starts with an arror and expects one expression which
+        /// acts as the return value. A semi colon is not forced at this juncture.
+        /// </summary>
+        private void ExpressionCodeBlock()
+        {
+            LogEnterNonTerminal(eNonTerminal.ExpressionCodeBlock);
+
+            AdvanceToken();
+            // Single line code block.
+            Expression();
+
+            LogExitNonTerminal(eNonTerminal.ExpressionCodeBlock);
+        }
+
+        /// <summary>
         /// Code that is converted to instructions in the text segment.
         /// List<Statement>
         /// </summary>
@@ -306,6 +330,12 @@ namespace BLang
         {
             //while ()
             LogEnterNonTerminal(eNonTerminal.StatementList);
+
+            while (IsStatementToken())
+            {
+                Statement();
+            }
+
             LogExitNonTerminal(eNonTerminal.StatementList);
         }
 
@@ -330,6 +360,37 @@ namespace BLang
         private void Statement()
         {
             LogEnterNonTerminal(eNonTerminal.Statement);
+
+            if (mToken.Code == eReserveWord.Let.Code())
+            {
+                VariableCreation();
+            }
+            else if (mToken.Code == eReserveWord.If.Code())
+            {
+                IfStatement();
+            }
+            else if(mToken.Code == eReserveWord.While.Code())
+            {
+
+            }
+            else if (mToken.Code == eReserveWord.For.Code())
+            {
+
+            }
+            else if (mToken.Code == eReserveWord.Return.Code())
+            {
+                ReturnStatement();
+            }
+            else if (mToken.Type == eTokenType.Identifier)
+            {
+                // It has to be a function call.
+                // FunctionCall();
+            }
+            else
+            {
+                Trace.Assert(false);
+            }
+
             LogExitNonTerminal(eNonTerminal.Statement);
         }
 
@@ -355,6 +416,149 @@ namespace BLang
             }
 
             LogExitNonTerminal(required? eNonTerminal.RequiredCalleeParams : eNonTerminal.OptionalCalleeParams);
+        }
+
+        /// <summary>
+        /// Simply return Expression ;
+        /// </summary>
+        private void ReturnStatement()
+        {
+            LogEnterNonTerminal(eNonTerminal.ReturnStatement);
+            AdvanceToken();
+
+            Expression();
+
+            if (mToken.Code == eOneCharSyntaxToken.Semi.Code())
+            {
+                AdvanceToken();
+            }
+            else
+            {
+                // AddError();
+                Debugger.Break();
+            }
+
+            LogExitNonTerminal(eNonTerminal.ReturnStatement);
+        }
+
+        private void IfStatement()
+        {
+            LogEnterNonTerminal(eNonTerminal.IfStatement);
+            AdvanceToken();
+
+            if (mToken.Code == eOneCharSyntaxToken.OpenPar.Code())
+            {
+                AdvanceToken();
+                Expression();
+
+                if (mToken.Code == eOneCharSyntaxToken.ClosePar.Code())
+                {
+                    AdvanceToken();
+                }
+                else
+                {
+                    // AddError();
+                    Debugger.Break();
+                }
+
+                if (mToken.Code == eOneCharSyntaxToken.OpenBrace.Code()) 
+                { 
+                    CodeBlock();
+
+                    // Handle else if and else blocks.
+                    if (mToken.Code == eReserveWord.Else.Code())
+                    {
+                        AdvanceToken();
+                        if (mToken.Code == eReserveWord.If.Code())
+                        {
+                            IfStatement();
+                        }
+                        else if (mToken.Code == eOneCharSyntaxToken.OpenBrace.Code())
+                        {
+                            CodeBlock();
+                        }
+                        else
+                        {
+                            // AddError();
+                            Debugger.Break();
+                        }
+                    }
+                }
+                else
+                {
+                    // AddError();
+                    Debugger.Break();
+                }
+            }
+            else
+            {
+                // AddError();
+                Debugger.Break();
+            }
+
+            LogExitNonTerminal(eNonTerminal.IfStatement);
+        }
+
+        /// <summary>
+        /// An if statement that forces a value to be returned at the end of each block. 
+        /// Must be a single expression.
+        /// </summary>
+        private void IfExpression()
+        {
+            LogEnterNonTerminal(eNonTerminal.IfExpression);
+            // If we get here, we assume that we have an if token currently.
+            AdvanceToken();
+
+            if (mToken.Code == eOneCharSyntaxToken.OpenPar.Code())
+            {
+                AdvanceToken();
+                Expression();
+
+                if (mToken.Code == eOneCharSyntaxToken.ClosePar.Code())
+                {
+                    AdvanceToken();
+                }
+                else
+                {
+                    // AddError();
+                    Debugger.Break();
+                }
+
+                if (mToken.Code == eTwoCharSyntaxToken.Arrow.Code())
+                {
+                    ExpressionCodeBlock();
+
+                    if (mToken.Code == eReserveWord.Else.Code())
+                    {
+                        AdvanceToken();
+                        if (mToken.Code == eReserveWord.If.Code())
+                        {
+                            IfExpression();
+                        }
+                        else if (mToken.Code == eTwoCharSyntaxToken.Arrow.Code())
+                        {
+                            ExpressionCodeBlock();
+                        }
+                        else
+                        {
+                            // AddError();
+                            Debugger.Break();
+                        }
+                    }
+                }
+                else
+                {
+                    // AddError();
+                    Debugger.Break();
+                }
+            }
+            else
+            {
+                // AddError();
+                Debugger.Break();
+            }
+
+            LogExitNonTerminal(eNonTerminal.IfExpression);
         }
 
         /// <summary>
@@ -484,13 +688,20 @@ namespace BLang
                     Debugger.Break();
                 }
             }
+            // Here we have an if statement that returns something.
+            else if (mToken.Code == eReserveWord.If.Code())
+            {
+                IfExpression();
+            }
             else
             {
                 if (mToken.Type == eTokenType.Identifier ||
                     mToken.Type == eTokenType.Integer ||
                     mToken.Type == eTokenType.FloatingPoint ||
                     mToken.Type == eTokenType.Char ||
-                    mToken.Type == eTokenType.String)
+                    mToken.Type == eTokenType.String ||
+                    mToken.Code == eReserveWord.True.Code() ||
+                    mToken.Code == eReserveWord.False.Code())
                 {
                     AdvanceToken();
                 }

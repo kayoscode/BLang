@@ -18,8 +18,13 @@
             OptionalCalleeParams,
             RequiredCalleeParams,
             CodeBlock,
+            ExpressionCodeBlock,
             StatementList,
-            Statement
+            Statement,
+            IfStatement,
+            IfExpression,
+            ReturnStatement,
+            FunctionCall,
         }
     }
 }
