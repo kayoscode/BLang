@@ -12,11 +12,13 @@
             VariableCreation,
             VariableInit,
             VariableDeclaration,
+            VariableAssignment,
             OptionalType,
             RequiredType,
             Expression,
             OptionalCalleeParams,
             RequiredCalleeParams,
+            RequiredCallerParams,
             CodeBlock,
             ExpressionCodeBlock,
             StatementList,
@@ -25,6 +27,9 @@
             IfExpression,
             ReturnStatement,
             FunctionCall,
+            WhileLoop,
+            ForLoop,
+            CodeStatement,
         }
     }
 }

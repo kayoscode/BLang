@@ -23,6 +23,10 @@
         LogicalShiftRight,
         [TwoCharSyntaxToken('=', '>')]
         Arrow,
+        [TwoCharSyntaxToken('+', '+')]
+        Increment,
+        [TwoCharSyntaxToken('-', '-')]
+        Decrement,
     }
 
     /// <summary>
