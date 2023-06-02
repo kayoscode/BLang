@@ -1,6 +1,7 @@
 ﻿using BLang.Error;
 using BLang.Utils;
 using System.Diagnostics;
+using System.Numerics;
 
 namespace BLang
 {
@@ -164,7 +165,7 @@ namespace BLang
             {
                 AdvanceToken();
 
-                while (IsModItem())
+                while (IsModItem() && !mAtEOF)
                 {
                     ModItem();
                 }
@@ -327,137 +328,14 @@ namespace BLang
         /// </summary>
         private void StatementList()
         {
-            //while ()
             LogEnterNonTerminal(eNonTerminal.StatementList);
 
-            while (IsStatementToken())
+            while (IsStatementToken() && !mAtEOF)
             {
                 Statement();
             }
 
             LogExitNonTerminal(eNonTerminal.StatementList);
-        }
-
-        /// <summary>
-        /// The set of all tokens that can be used in a statement as part of a function body.
-        /// </summary>
-        /// <returns></returns>
-        private bool IsStatementToken()
-        {
-            return 
-                   // Logic statement
-                   mToken.Code == eReserveWord.If.Code() ||
-                   // Loop statement
-                   mToken.Code == eReserveWord.While.Code() ||
-                   mToken.Code == eReserveWord.For.Code() ||
-                   // Function call
-                   mToken.Code == eReserveWord.Return.Code() ||
-                   IsCodeStatementToken();
-        }
-
-        /// <summary>
-        /// The subset of statements that can be used as an individual command.
-        /// </summary>
-        /// <returns></returns>
-        private bool IsCodeStatementToken()
-        {
-            return mToken.Code == eReserveWord.Let.Code() ||        // Varaible creation.
-                   // Logic statement
-                   mToken.Type == eTokenType.Identifier ||
-
-                   // Inc/dec
-                   mToken.Code == eTwoCharSyntaxToken.Increment.Code() ||
-                   mToken.Code == eTwoCharSyntaxToken.Decrement.Code() ||
-
-                   // Empty statement.
-                   mToken.Code == eOneCharSyntaxToken.Semi.Code();
-        }
-
-        /// <summary>
-        /// A single statement. Each one ends with a semicolon.
-        /// Statement: VariableCreation | LogicalStatement | LoopStatement | FunctionCall | ReturnStatement
-        /// </summary>
-        private void Statement()
-        {
-            LogEnterNonTerminal(eNonTerminal.Statement);
-
-            if (IsCodeStatementToken())
-            {
-                CodeStatement();
-            }
-            else if (mToken.Code == eReserveWord.If.Code())
-            {
-                IfStatement();
-            }
-            else if(mToken.Code == eReserveWord.While.Code())
-            {
-                WhileLoop();
-            }
-            else if (mToken.Code == eReserveWord.For.Code())
-            {
-                ForLoop();
-            }
-            else if (mToken.Code == eReserveWord.Return.Code())
-            {
-                ReturnStatement();
-            }
-            else
-            {
-                Trace.Assert(false);
-            }
-
-            LogExitNonTerminal(eNonTerminal.Statement);
-        }
-
-        /// <summary>
-        /// Only assign, call, increement, decrement statements allowed.
-        /// </summary>
-        private void CodeStatement()
-        {
-            LogEnterNonTerminal(eNonTerminal.CodeStatement);
-
-            if (mToken.Code == eReserveWord.Let.Code())
-            {
-                VariableCreation();
-            }
-            else if (mToken.Code == eOneCharSyntaxToken.Semi.Code())
-            {
-                // Empty line.
-                AdvanceToken();
-            }
-            else if (mToken.Type == eTokenType.Identifier)
-            {
-                // Can be one of a couple things.
-                // 1. A variable assignment.
-                // 2. An post increment/decrement expression.
-                // 3. A function call.
-                AdvanceToken();
-                if (mToken.Code == eOneCharSyntaxToken.Equal.Code())
-                {
-                    VariableAssignment();
-                }
-                else if(mToken.Code == eOneCharSyntaxToken.OpenPar.Code())
-                {
-                    //FunctionCallStatement();
-                }
-                else if (mToken.Code == eTwoCharSyntaxToken.Increment.Code() ||
-                         mToken.Code == eTwoCharSyntaxToken.Decrement.Code())
-                {
-                    //IncDecStatement();
-                }
-                else
-                {
-                    // AddError();
-                    Debugger.Break();
-                }
-                // TODO: possible expression
-            }
-            else
-            {
-                Trace.Assert(false);
-            }
-
-            LogExitNonTerminal(eNonTerminal.CodeStatement);
         }
 
         private void FunctionCall()
@@ -910,7 +788,13 @@ namespace BLang
         {
             LogEnterNonTerminal(eNonTerminal.Expression);
 
-            if (mToken.Code == eOneCharSyntaxToken.OpenPar.Code())
+            // Pre inc. ++Expression. Semantcs will enforce that the expression resolves to a modifiable var.
+            if (IsExpressionPrefix())
+            {
+                AdvanceToken();
+                Expression();
+            }
+            else if (mToken.Code == eOneCharSyntaxToken.OpenPar.Code())
             {
                 AdvanceToken();
                 Expression();
@@ -926,49 +810,214 @@ namespace BLang
                 }
             }
             // Here we have an if statement that returns something.
+            // Semantics  will enforce that there is an else clause.
             else if (mToken.Code == eReserveWord.If.Code())
             {
                 IfExpression();
             }
+            else if (IsConstant())
+            {
+                AdvanceToken();
+            }
             else if (mToken.Type == eTokenType.Identifier)
             {
-                // Function call, post inc/post dec, or simple variable.
+                // Can be a variable or a function call.
                 AdvanceToken();
 
-                // Function call.
+                // Handle function call if its there.
                 if (mToken.Code == eOneCharSyntaxToken.OpenPar.Code())
                 {
                     FunctionCall();
                 }
-                else if (mToken.Code == eTwoCharSyntaxToken.Increment.Code() ||
-                         mToken.Code == eTwoCharSyntaxToken.Decrement.Code())
-                {
-                    // Post inc/dec
-                    AdvanceToken();
-                }
             }
             else
             {
-                if (mToken.Type == eTokenType.Integer ||
-                    mToken.Type == eTokenType.FloatingPoint ||
-                    mToken.Type == eTokenType.Char ||
-                    mToken.Type == eTokenType.String ||
-                    mToken.Code == eReserveWord.True.Code() ||
-                    mToken.Code == eReserveWord.False.Code())
-                {
-                    AdvanceToken();
-                }
-                else
-                {
-                    // AddError();
-                    Debugger.Break();
-                }
+                // AddError();
+                Debugger.Break();
+            }
+
+            // Handle post increment.
+            if (IsIncDec())
+            {
+                AdvanceToken();
             }
 
             LogExitNonTerminal(eNonTerminal.Expression);
         }
 
-        #region Utilities 
+        /// <summary>
+        /// A single statement. Each one ends with a semicolon.
+        /// Statement: VariableCreation | LogicalStatement | LoopStatement | FunctionCall | ReturnStatement
+        /// </summary>
+        private void Statement()
+        {
+            LogEnterNonTerminal(eNonTerminal.Statement);
+
+            if (mToken.Code == eReserveWord.If.Code())
+            {
+                IfStatement();
+            }
+            else if(mToken.Code == eReserveWord.While.Code())
+            {
+                WhileLoop();
+            }
+            else if (mToken.Code == eReserveWord.For.Code())
+            {
+                ForLoop();
+            }
+            else if (mToken.Code == eReserveWord.Return.Code())
+            {
+                ReturnStatement();
+            }
+            else if (IsCodeStatementToken())
+            {
+                CodeStatement();
+            }
+            else
+            {
+                Trace.Assert(false);
+            }
+
+            LogExitNonTerminal(eNonTerminal.Statement);
+        }
+
+        /// <summary>
+        /// Only assign, call, increement, decrement statements allowed.
+        /// </summary>
+        private void CodeStatement()
+        {
+            LogEnterNonTerminal(eNonTerminal.CodeStatement);
+
+            if (mToken.Code == eReserveWord.Let.Code())
+            {
+                VariableCreation();
+            }
+            else if (mToken.Code == eOneCharSyntaxToken.Semi.Code())
+            {
+                // Empty line.
+                AdvanceToken();
+            }
+            else if (IsExpressionStartToken())
+            {
+                Expression();
+            }
+            else
+            {
+                Trace.Assert(false);
+            }
+
+            LogExitNonTerminal(eNonTerminal.CodeStatement);
+        }
+
+        private bool IsLogical()
+        {
+            return mToken.Code == eTwoCharSyntaxToken.AndAnd.Code() ||
+                   mToken.Code == eTwoCharSyntaxToken.OrOr.Code();
+        }
+
+        private bool IsCompare()
+        {
+            return mToken.Code == eOneCharSyntaxToken.CloseAngleBrace.Code() ||
+                   mToken.Code == eOneCharSyntaxToken.CloseAngleBrace.Code() ||
+                   mToken.Code == eTwoCharSyntaxToken.Gte.Code() ||
+                   mToken.Code == eTwoCharSyntaxToken.Lte.Code() ||
+                   mToken.Code == eTwoCharSyntaxToken.AreEqual.Code() ||
+                   mToken.Code == eTwoCharSyntaxToken.NotEqual.Code();
+        }
+
+        private bool IsAddOp()
+        {
+            return mToken.Code == eOneCharSyntaxToken.Plus.Code() ||
+                   mToken.Code == eOneCharSyntaxToken.Minus.Code() ||
+                   mToken.Code == eOneCharSyntaxToken.And.Code() ||
+                   mToken.Code == eOneCharSyntaxToken.Or.Code();
+        }
+
+        private bool IsMul()
+        {
+            return mToken.Code == eOneCharSyntaxToken.Star.Code() ||
+                   mToken.Code == eOneCharSyntaxToken.Divide.Code() ||
+                   mToken.Code == eOneCharSyntaxToken.Mod.Code() ||
+                   mToken.Code == eOneCharSyntaxToken.Xor.Code() ||
+                   mToken.Code == eTwoCharSyntaxToken.LogicalShiftLeft.Code() ||
+                   mToken.Code == eTwoCharSyntaxToken.LogicalShiftRight.Code();
+        }
+
+        /// <summary>
+        /// Determines whether the token could represent a valid expression.
+        /// </summary>
+        private bool IsExpressionStartToken()
+        {
+            return mToken.Type == eTokenType.Identifier ||
+                   mToken.Code == eOneCharSyntaxToken.OpenPar.Code() ||
+                   mToken.Code == eReserveWord.If.Code() ||
+                   IsExpressionPrefix() ||
+                   IsConstant();
+        }
+
+        /// <summary>
+        /// Whether the token is an increment or decrement token.
+        /// </summary>
+        /// <returns></returns>
+        private bool IsIncDec()
+        {
+            return mToken.Code == eTwoCharSyntaxToken.Increment.Code() ||
+                   mToken.Code == eTwoCharSyntaxToken.Decrement.Code();
+        }
+
+        private bool IsExpressionPrefix()
+        {
+            return mToken.Code == eOneCharSyntaxToken.Not.Code() ||
+                   mToken.Code == eOneCharSyntaxToken.Minus.Code() ||
+                   mToken.Code == eOneCharSyntaxToken.Compliment.Code() ||
+                   IsIncDec();
+        }
+
+        /// <summary>
+        /// Whether the token represents a constant.
+        /// </summary>
+        /// <returns></returns>
+        private bool IsConstant()
+        {
+            return mToken.Type == eTokenType.Integer ||
+                   mToken.Type == eTokenType.FloatingPoint ||
+                   mToken.Type == eTokenType.Char ||
+                   mToken.Type == eTokenType.String ||
+                   mToken.Code == eReserveWord.True.Code() ||
+                   mToken.Code == eReserveWord.False.Code();
+            }
+
+
+        /// <summary>
+        /// The set of all tokens that can be used in a statement as part of a function body.
+        /// </summary>
+        /// <returns></returns>
+        private bool IsStatementToken()
+        {
+            return 
+                   // Logic statement
+                   mToken.Code == eReserveWord.If.Code() ||
+                   // Loop statement
+                   mToken.Code == eReserveWord.While.Code() ||
+                   mToken.Code == eReserveWord.For.Code() ||
+                   // Function call
+                   mToken.Code == eReserveWord.Return.Code() ||
+                   IsCodeStatementToken();
+        }
+
+        /// <summary>
+        /// The subset of statements that can be used as an individual command.
+        /// </summary>
+        /// <returns></returns>
+        private bool IsCodeStatementToken()
+        {
+            return mToken.Code == eReserveWord.Let.Code() ||        // Varaible creation.
+                   // Possible expression.
+                   IsExpressionStartToken() ||
+
+                   // Empty statement.
+                   mToken.Code == eOneCharSyntaxToken.Semi.Code();
+        }
 
         /// <summary>
         /// Is the token an item that belongs inside of a module definition.
@@ -1013,8 +1062,6 @@ namespace BLang
             }
 #endif
         }
-
-        #endregion
 
         private ParserContext mParserContext = new();
         private Tokenizer mTokenizer;
