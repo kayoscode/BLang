@@ -56,6 +56,6 @@ namespace BLang
         /// <summary>
         /// The error state.
         /// </summary>
-        public static ErrorLogger ErrorLogger { get; private set; } = new();
+        public ErrorLogger ErrorLogger { get; private set; } = new();
     }
 }

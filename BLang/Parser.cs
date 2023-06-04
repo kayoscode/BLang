@@ -1,7 +1,6 @@
 ﻿using BLang.Error;
 using BLang.Utils;
 using System.Diagnostics;
-using System.Numerics;
 
 namespace BLang
 {
@@ -356,24 +355,31 @@ namespace BLang
             }
             else
             {
-                Debugger.Break();
                 // AddError();
+                Debugger.Break();
             }
 
             LogExitNonTerminal(eNonTerminal.FunctionCall);
         }
 
-        private void VariableAssignment()
+        private void ArrayIndex()
         {
-            LogEnterNonTerminal(eNonTerminal.VariableAssignment);
+            LogEnterNonTerminal(eNonTerminal.ArrayIndex);
             AdvanceToken();
 
-            Expression();
-
-            // Now it must end with a semicolon.
-            if (mToken.Code == eOneCharSyntaxToken.Semi.Code())
+            if (IsExpressionStartToken())
             {
-                AdvanceToken();
+                Expression();
+
+                if (mToken.Code == eOneCharSyntaxToken.CloseBrack.Code())
+                {
+                    AdvanceToken();
+                }
+                else
+                {
+                    // AddError();
+                    Debugger.Break();
+                } 
             }
             else
             {
@@ -381,7 +387,7 @@ namespace BLang
                 Debugger.Break();
             }
 
-            LogExitNonTerminal(eNonTerminal.VariableAssignment);
+            LogExitNonTerminal(eNonTerminal.ArrayIndex);
         }
 
         private void ForLoop()
@@ -615,68 +621,6 @@ namespace BLang
         }
 
         /// <summary>
-        /// An if statement that forces a value to be returned at the end of each block. 
-        /// Must be a single expression.
-        /// </summary>
-        private void IfExpression()
-        {
-            LogEnterNonTerminal(eNonTerminal.IfExpression);
-            // If we get here, we assume that we have an if token currently.
-            AdvanceToken();
-
-            if (mToken.Code == eOneCharSyntaxToken.OpenPar.Code())
-            {
-                AdvanceToken();
-                Expression();
-
-                if (mToken.Code == eOneCharSyntaxToken.ClosePar.Code())
-                {
-                    AdvanceToken();
-                }
-                else
-                {
-                    // AddError();
-                    Debugger.Break();
-                }
-
-                if (mToken.Code == eTwoCharSyntaxToken.Arrow.Code())
-                {
-                    ExpressionCodeBlock();
-
-                    if (mToken.Code == eReserveWord.Else.Code())
-                    {
-                        AdvanceToken();
-                        if (mToken.Code == eReserveWord.If.Code())
-                        {
-                            IfExpression();
-                        }
-                        else if (mToken.Code == eTwoCharSyntaxToken.Arrow.Code())
-                        {
-                            ExpressionCodeBlock();
-                        }
-                        else
-                        {
-                            // AddError();
-                            Debugger.Break();
-                        }
-                    }
-                }
-                else
-                {
-                    // AddError();
-                    Debugger.Break();
-                }
-            }
-            else
-            {
-                // AddError();
-                Debugger.Break();
-            }
-
-            LogExitNonTerminal(eNonTerminal.IfExpression);
-        }
-
-        /// <summary>
         /// VariableCreation: VariableAssignment | VariableDeclaration
         /// VariableAssignment: let Identifier : OptionalType = Expression;
         /// VariableDeclaration: let Identifier : Type;
@@ -782,70 +726,6 @@ namespace BLang
         }
 
         /// <summary>
-        /// Just an identifier, number, float, char, or string for now.
-        /// </summary>
-        private void Expression()
-        {
-            LogEnterNonTerminal(eNonTerminal.Expression);
-
-            // Pre inc. ++Expression. Semantcs will enforce that the expression resolves to a modifiable var.
-            if (IsExpressionPrefix())
-            {
-                AdvanceToken();
-                Expression();
-            }
-            else if (mToken.Code == eOneCharSyntaxToken.OpenPar.Code())
-            {
-                AdvanceToken();
-                Expression();
-
-                if (mToken.Code == eOneCharSyntaxToken.ClosePar.Code())
-                {
-                    AdvanceToken();
-                }
-                else
-                {
-                    // AddError
-                    Debugger.Break();
-                }
-            }
-            // Here we have an if statement that returns something.
-            // Semantics  will enforce that there is an else clause.
-            else if (mToken.Code == eReserveWord.If.Code())
-            {
-                IfExpression();
-            }
-            else if (IsConstant())
-            {
-                AdvanceToken();
-            }
-            else if (mToken.Type == eTokenType.Identifier)
-            {
-                // Can be a variable or a function call.
-                AdvanceToken();
-
-                // Handle function call if its there.
-                if (mToken.Code == eOneCharSyntaxToken.OpenPar.Code())
-                {
-                    FunctionCall();
-                }
-            }
-            else
-            {
-                // AddError();
-                Debugger.Break();
-            }
-
-            // Handle post increment.
-            if (IsIncDec())
-            {
-                AdvanceToken();
-            }
-
-            LogExitNonTerminal(eNonTerminal.Expression);
-        }
-
-        /// <summary>
         /// A single statement. Each one ends with a semicolon.
         /// Statement: VariableCreation | LogicalStatement | LoopStatement | FunctionCall | ReturnStatement
         /// </summary>
@@ -900,6 +780,16 @@ namespace BLang
             else if (IsExpressionStartToken())
             {
                 Expression();
+
+                if (mToken.Code == eOneCharSyntaxToken.Semi.Code())
+                {
+                    AdvanceToken();
+                }
+                else
+                {
+                    // AddError()
+                    Debugger.Break();
+                }
             }
             else
             {
@@ -909,69 +799,7 @@ namespace BLang
             LogExitNonTerminal(eNonTerminal.CodeStatement);
         }
 
-        private bool IsLogical()
-        {
-            return mToken.Code == eTwoCharSyntaxToken.AndAnd.Code() ||
-                   mToken.Code == eTwoCharSyntaxToken.OrOr.Code();
-        }
-
-        private bool IsCompare()
-        {
-            return mToken.Code == eOneCharSyntaxToken.CloseAngleBrace.Code() ||
-                   mToken.Code == eOneCharSyntaxToken.CloseAngleBrace.Code() ||
-                   mToken.Code == eTwoCharSyntaxToken.Gte.Code() ||
-                   mToken.Code == eTwoCharSyntaxToken.Lte.Code() ||
-                   mToken.Code == eTwoCharSyntaxToken.AreEqual.Code() ||
-                   mToken.Code == eTwoCharSyntaxToken.NotEqual.Code();
-        }
-
-        private bool IsAddOp()
-        {
-            return mToken.Code == eOneCharSyntaxToken.Plus.Code() ||
-                   mToken.Code == eOneCharSyntaxToken.Minus.Code() ||
-                   mToken.Code == eOneCharSyntaxToken.And.Code() ||
-                   mToken.Code == eOneCharSyntaxToken.Or.Code();
-        }
-
-        private bool IsMul()
-        {
-            return mToken.Code == eOneCharSyntaxToken.Star.Code() ||
-                   mToken.Code == eOneCharSyntaxToken.Divide.Code() ||
-                   mToken.Code == eOneCharSyntaxToken.Mod.Code() ||
-                   mToken.Code == eOneCharSyntaxToken.Xor.Code() ||
-                   mToken.Code == eTwoCharSyntaxToken.LogicalShiftLeft.Code() ||
-                   mToken.Code == eTwoCharSyntaxToken.LogicalShiftRight.Code();
-        }
-
-        /// <summary>
-        /// Determines whether the token could represent a valid expression.
-        /// </summary>
-        private bool IsExpressionStartToken()
-        {
-            return mToken.Type == eTokenType.Identifier ||
-                   mToken.Code == eOneCharSyntaxToken.OpenPar.Code() ||
-                   mToken.Code == eReserveWord.If.Code() ||
-                   IsExpressionPrefix() ||
-                   IsConstant();
-        }
-
-        /// <summary>
-        /// Whether the token is an increment or decrement token.
-        /// </summary>
-        /// <returns></returns>
-        private bool IsIncDec()
-        {
-            return mToken.Code == eTwoCharSyntaxToken.Increment.Code() ||
-                   mToken.Code == eTwoCharSyntaxToken.Decrement.Code();
-        }
-
-        private bool IsExpressionPrefix()
-        {
-            return mToken.Code == eOneCharSyntaxToken.Not.Code() ||
-                   mToken.Code == eOneCharSyntaxToken.Minus.Code() ||
-                   mToken.Code == eOneCharSyntaxToken.Compliment.Code() ||
-                   IsIncDec();
-        }
+        #region Utilities
 
         /// <summary>
         /// Whether the token represents a constant.
@@ -985,7 +813,7 @@ namespace BLang
                    mToken.Type == eTokenType.String ||
                    mToken.Code == eReserveWord.True.Code() ||
                    mToken.Code == eReserveWord.False.Code();
-            }
+        }
 
 
         /// <summary>
@@ -1063,6 +891,9 @@ namespace BLang
 #endif
         }
 
+        #endregion
+
+        public ParserContext ParserContext => mParserContext;
         private ParserContext mParserContext = new();
         private Tokenizer mTokenizer;
         private Tokenizer.Token mToken;

@@ -30,6 +30,7 @@
             WhileLoop,
             ForLoop,
             CodeStatement,
+            ArrayIndex
         }
     }
 }

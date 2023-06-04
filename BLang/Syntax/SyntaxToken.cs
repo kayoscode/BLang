@@ -1,5 +1,13 @@
 ﻿namespace BLang
 {
+    public enum eThreeCharSyntaxToken
+    {
+        [ThreeCharSyntaxToken(eTwoCharSyntaxToken.LogicalShiftRight, '=')]
+        LsrEquals,
+        [ThreeCharSyntaxToken(eTwoCharSyntaxToken.LogicalShiftLeft, '=')]
+        LslEquals,
+    }
+
     /// <summary>
     /// Syntax tokens with two characters.
     /// </summary>
@@ -14,9 +22,9 @@
         [TwoCharSyntaxToken('!', '=')]
         NotEqual,
         [TwoCharSyntaxToken('&', '&')]
-        AndAnd,
+        LogicalAnd,
         [TwoCharSyntaxToken('|', '|')]
-        OrOr,
+        LogicalOr,
         [TwoCharSyntaxToken('<', '<')]
         LogicalShiftLeft,
         [TwoCharSyntaxToken('>', '>')]
@@ -27,6 +35,24 @@
         Increment,
         [TwoCharSyntaxToken('-', '-')]
         Decrement,
+
+        [TwoCharSyntaxToken('+', '=')]
+        AddEquals,
+        [TwoCharSyntaxToken('-', '=')]
+        SubEquals,
+        [TwoCharSyntaxToken('*', '=')]
+        MulEquals,
+        [TwoCharSyntaxToken('/', '=')]
+        DivEquals,
+        [TwoCharSyntaxToken('%', '=')]
+        ModEquals,
+        // LSL and LSR equals -> need three chars.
+        [TwoCharSyntaxToken('&', '=')]
+        AndEquals,
+        [TwoCharSyntaxToken('^', '=')]
+        XorEquals,
+        [TwoCharSyntaxToken('|', '=')]
+        OrEquals
     }
 
     /// <summary>
