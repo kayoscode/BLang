@@ -1,5 +1,13 @@
 ﻿namespace BLang
 {
+    public enum eThreeCharSyntaxToken
+    {
+        [ThreeCharSyntaxToken(eTwoCharSyntaxToken.LogicalShiftRight, '=')]
+        LsrEquals,
+        [ThreeCharSyntaxToken(eTwoCharSyntaxToken.LogicalShiftLeft, '=')]
+        LslEquals,
+    }
+
     /// <summary>
     /// Syntax tokens with two characters.
     /// </summary>
@@ -14,15 +22,37 @@
         [TwoCharSyntaxToken('!', '=')]
         NotEqual,
         [TwoCharSyntaxToken('&', '&')]
-        AndAnd,
+        LogicalAnd,
         [TwoCharSyntaxToken('|', '|')]
-        OrOr,
+        LogicalOr,
         [TwoCharSyntaxToken('<', '<')]
         LogicalShiftLeft,
         [TwoCharSyntaxToken('>', '>')]
         LogicalShiftRight,
         [TwoCharSyntaxToken('=', '>')]
         Arrow,
+        [TwoCharSyntaxToken('+', '+')]
+        Increment,
+        [TwoCharSyntaxToken('-', '-')]
+        Decrement,
+
+        [TwoCharSyntaxToken('+', '=')]
+        AddEquals,
+        [TwoCharSyntaxToken('-', '=')]
+        SubEquals,
+        [TwoCharSyntaxToken('*', '=')]
+        MulEquals,
+        [TwoCharSyntaxToken('/', '=')]
+        DivEquals,
+        [TwoCharSyntaxToken('%', '=')]
+        ModEquals,
+        // LSL and LSR equals -> need three chars.
+        [TwoCharSyntaxToken('&', '=')]
+        AndEquals,
+        [TwoCharSyntaxToken('^', '=')]
+        XorEquals,
+        [TwoCharSyntaxToken('|', '=')]
+        OrEquals
     }
 
     /// <summary>
@@ -32,6 +62,8 @@
     {
         [OneCharSyntaxToken(',')]
         Comma,
+        [OneCharSyntaxToken('.')]
+        Period,
         [OneCharSyntaxToken('~')]
         Compliment,
         [OneCharSyntaxToken('*')]
@@ -41,13 +73,13 @@
         [OneCharSyntaxToken(')')]
         ClosePar,
         [OneCharSyntaxToken('{')]
-        OpenBrack,
-        [OneCharSyntaxToken('}')]
-        CloseBrack,
-        [OneCharSyntaxToken('[')]
         OpenBrace,
-        [OneCharSyntaxToken(']')]
+        [OneCharSyntaxToken('}')]
         CloseBrace,
+        [OneCharSyntaxToken('[')]
+        OpenBrack,
+        [OneCharSyntaxToken(']')]
+        CloseBrack,
         [OneCharSyntaxToken('&')]
         And,
         [OneCharSyntaxToken('|')]
@@ -57,9 +89,9 @@
         [OneCharSyntaxToken('!')]
         Not,
         [OneCharSyntaxToken('>')]
-        Gt,
+        CloseAngleBrace,
         [OneCharSyntaxToken('<')]
-        Lt,
+        OpenAngleBrace,
         [OneCharSyntaxToken(':')]
         Colon,
         [OneCharSyntaxToken(';')]

@@ -11,6 +11,12 @@
         /// Whether or not the software should generate documentation for the system.
         /// TODO: set from run args
         /// </summary>
-        public static bool GenerateDocs = true;
+        public static bool GenerateDocs = false;
+
+        /// <summary>
+        /// If set to true, the debugger will log new tokens and when it changes states to the console.
+        /// Will not print in release mode.
+        /// </summary>
+        public static bool LogParserDetails = true;
     }
 }

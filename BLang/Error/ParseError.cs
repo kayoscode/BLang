@@ -13,7 +13,7 @@ namespace BLang.Error
         /// </summary>
         public ParseError(ParserContext context) 
         {
-            Context = context;
+            Context = new ParserContext(context);
         }
 
         /// <summary>
@@ -65,7 +65,7 @@ namespace BLang.Error
         public void PrintErrorMessage()
         {
             // TODO: file name.
-            Console.WriteLine($"{Level}[{ErrorType.ErrorCode()}] {ErrorType.Name()} on Ln: {Context.Token.Line} Ch: {Context.Token.Char}");
+            Console.WriteLine($"{Level}[{ErrorType.ErrorCode()}] {ErrorType.Name()} on Ln: {Context.CurrentLine} Ch: {Context.CurrentChar}");
             Console.WriteLine(Message);
         }
     }

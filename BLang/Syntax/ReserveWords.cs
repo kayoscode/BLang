@@ -4,15 +4,15 @@
     {
         #region Access modifiers
 
-        [ReserveWord("export")]
+        [ReserveWord("public")]
         Export,
         [ReserveWord("import")]
         Import,
 
         #endregion
 
-        [ReserveWord("var")]
-        Var,
+        [ReserveWord("let")]
+        Let,
         [ReserveWord("true")]
         True,
         [ReserveWord("false")]
@@ -27,6 +27,8 @@
         EntryPoint,
         [ReserveWord("fn")]
         Function,
+        [ReserveWord("mod")]
+        Module,
 
         #region Control flow
 

@@ -10,11 +10,13 @@
         I32, 
         [PrimitiveType("i64", 8)]
         I64,
-        [PrimitiveType("bool", 1)]
-        Bool,
         [PrimitiveType("f32", 4)]
         F32,
         [PrimitiveType("f64", 8)]
         F64,
+        [PrimitiveType("bool", 1)]
+        Bool,
+        [PrimitiveType("char", 8)]
+        Char,
     }
 }

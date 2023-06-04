@@ -1,6 +1,7 @@
 ﻿using BLang.Error;
 using BLang.Syntax;
 using BLang.Utils;
+using System.ComponentModel.Design;
 using System.Text;
 
 namespace BLang
@@ -110,7 +111,7 @@ namespace BLang
                 }
             }
 
-            int reserveTableCode = mParserContext.ReserveTable.GetReserveCode(mCurrentToken.Lexeme);
+            int reserveTableCode = ParserContext.ReserveTable.GetReserveCode(mCurrentToken.Lexeme);
 
             if (reserveTableCode >= 0)
             {
@@ -119,7 +120,7 @@ namespace BLang
             }
             else
             {
-                int typeTableCode = mParserContext.PrimitiveTypeTable.GetTypeCode(mCurrentToken.Lexeme);
+                int typeTableCode = ParserContext.PrimitiveTypeTable.GetTypeCode(mCurrentToken.Lexeme);
 
                 if (typeTableCode >= 0)
                 {
@@ -398,6 +399,23 @@ namespace BLang
                         NextCharacter();
                         NextCharacter();
 
+                        // Check if there is a matching three char token starting with the two char token.
+                        var c3 = mChar;
+                        foreach (var threeCharSyntaxToken in mAllThreeCharTokens)
+                        {
+                            if (c1 == threeCharSyntaxToken.Char1() &&
+                                c2 == threeCharSyntaxToken.Char2() &&
+                                c3 == threeCharSyntaxToken.Char3())
+                            {
+                                NextCharacter();
+
+                                mCurrentToken.SetTokenData(c1 + string.Empty + c2,
+                                    eTokenType.SyntaxToken, threeCharSyntaxToken.Code());
+
+                                return true;
+                            }
+                        }
+
                         mCurrentToken.SetTokenData(c1 + string.Empty + c2,
                             eTokenType.SyntaxToken, twoCharSyntaxToken.Code());
 
@@ -575,6 +593,9 @@ namespace BLang
         private IReadOnlyList<eTwoCharSyntaxToken> mAllTwoCharTokens =
             new List<eTwoCharSyntaxToken>(Enum.GetValues<eTwoCharSyntaxToken>());
 
-        public ErrorLogger ErrorLogger { get; private set; } = new();
+        private IReadOnlyList<eThreeCharSyntaxToken> mAllThreeCharTokens =
+            new List<eThreeCharSyntaxToken>(Enum.GetValues<eThreeCharSyntaxToken>());
+
+        public ErrorLogger ErrorLogger => ParserContext.ErrorLogger;
     }
 }

@@ -17,7 +17,7 @@ namespace BLang
     public static class PrimitiveTypeAttributeData
     {
         // Primitive types start at 0.
-        private const int PRIMITIVE_TYPE_OFFSET = 0;
+        private const int PRIMITIVE_TYPE_OFFSET = 1000;
 
         public static string Name(this ePrimitiveType token)
         {

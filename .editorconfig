@@ -1,0 +1,10 @@
+
+[*.cs]
+indent_style = space
+indent_size = 4
+tab_width = 4
+
+[*]
+
+# ReSharper properties
+resharper_csharp_use_indent_from_vs = false

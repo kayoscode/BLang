@@ -41,6 +41,7 @@
                 Line = other.Line;
                 Char = other.Char;
                 Code = other.Code;
+                Data = other.Data;
             }
 
             /// <summary>
@@ -70,17 +71,26 @@
             public int Char { get; set; }
 
             /// <summary>
-            /// Stores more specific information about the token.
-            /// A number for floats and integers, or a code for reserves.
+            /// Stores the token code.
             /// </summary>
             public long Code { get; set; }
+
+            /// <summary>
+            /// Stores the data of the token, aka the parsed lexeme into an integer, or char or whatever
+            /// </summary>
+            public long Data { get; set; }
 
             /// <summary>
             /// Prints the token to the console.
             /// </summary>
             public void PrintToken()
             {
-                Console.WriteLine($"\"{Lexeme}\"   [{Code}]: {Line}, {Char} ({Type})");
+                Console.WriteLine($"\"{Lexeme}\" [{Code}]: {Line}, {Char} ({Type})");
+            }
+
+            public void PrintTokenShort()
+            {
+                Console.WriteLine($"[{Code:D4}] \"{Lexeme}\"");
             }
         }
     }
