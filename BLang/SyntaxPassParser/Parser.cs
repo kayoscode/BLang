@@ -73,10 +73,10 @@ namespace BLang
                 Debugger.Break();
             }
 
-            if (mAtEOF && 
+            if (mIsEof && 
                 ErrorLogger.ErrorCount == 0)
             {
-                Console.WriteLine("File parsed to completion");
+                Console.WriteLine("File parsed to completion.");
             }
         }
 
@@ -88,7 +88,7 @@ namespace BLang
             LogEnterNonTerminal(eNonTerminal.File);
 
             // Load the import statements. They can only appear at the top.
-            while (mToken.Code == eReserveWord.Import.Code() && !mAtEOF)
+            while (mToken.Code == eReserveWord.Import.Code() && !mIsEof)
             {
                 ImportStatement();
             }
@@ -164,7 +164,7 @@ namespace BLang
             {
                 AdvanceToken();
 
-                while (ParserUtils.IsModItem(mToken) && !mAtEOF)
+                while (ParserUtils.IsModItem(mToken) && !mIsEof)
                 {
                     ModItem();
                 }
@@ -303,7 +303,7 @@ namespace BLang
                 Debugger.Break();
             }
 
-            LogEnterNonTerminal(eNonTerminal.CodeBlock);
+            LogExitNonTerminal(eNonTerminal.CodeBlock);
         }
 
         /// <summary>
@@ -329,7 +329,7 @@ namespace BLang
         {
             LogEnterNonTerminal(eNonTerminal.StatementList);
 
-            while (ParserUtils.IsStatementToken(mToken) && !mAtEOF)
+            while (ParserUtils.IsStatementToken(mToken) && !mIsEof)
             {
                 Statement();
             }
@@ -533,7 +533,7 @@ namespace BLang
                 CallerParams();
             }
 
-            LogEnterNonTerminal(eNonTerminal.RequiredCallerParams);
+            LogExitNonTerminal(eNonTerminal.RequiredCallerParams);
         }
 
         /// <summary>
@@ -801,18 +801,25 @@ namespace BLang
 
         private void AdvanceToken()
         {
-            mAtEOF = !mTokenizer.NextToken();
+            mIsEof = !mTokenizer.NextToken();
+            mParserContext.AddToken(mToken, mCurrentContext);
 
 #if (DEBUG)
-            if (AppSettings.LogParserDetails)
+            if (!mIsEof)
             {
-                mToken.PrintTokenShort();
+                if (AppSettings.LogParserDetails)
+                {
+                    mToken.PrintTokenShort();
+                }
             }
 #endif
         }
 
         private void LogEnterNonTerminal(eNonTerminal nt)
         {
+            mContext.Push(nt);
+            mCurrentContext = nt;
+
 #if (DEBUG)
             if (AppSettings.LogParserDetails)
             {
@@ -823,6 +830,10 @@ namespace BLang
 
         private void LogExitNonTerminal(eNonTerminal nt)
         {
+            Trace.Assert(mContext.Count > 0);
+            Trace.Assert(nt == mContext.Peek());
+            mCurrentContext = mContext.Pop();
+
 #if (DEBUG)
             if (AppSettings.LogParserDetails)
             {
@@ -835,7 +846,10 @@ namespace BLang
         private ParserContext mParserContext = new();
         private Tokenizer mTokenizer;
         private Tokenizer.Token mToken;
-        private bool mAtEOF = false;
+        private bool mIsEof = false;
+
+        private Stack<eNonTerminal> mContext = new();
+        private eNonTerminal mCurrentContext = eNonTerminal.File;
 
         public ErrorLogger ErrorLogger => ParserContext.ErrorLogger;
     }

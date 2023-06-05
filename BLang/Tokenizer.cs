@@ -1,12 +1,11 @@
 ﻿using BLang.Error;
 using BLang.Syntax;
 using BLang.Utils;
-using System.ComponentModel.Design;
 using System.Text;
 
 namespace BLang
 {
-    public partial class Tokenizer
+    public partial class Tokenizer 
     {
         /// <summary>
         /// Standard constructor. Initialize the input stream later.

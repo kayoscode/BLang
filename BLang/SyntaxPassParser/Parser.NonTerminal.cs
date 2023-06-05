@@ -2,7 +2,7 @@
 {
     public partial class Parser
     {
-        private enum eNonTerminal
+        public enum eNonTerminal
         {
             File,
             Module,

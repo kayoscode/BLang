@@ -12,8 +12,7 @@ namespace BLang.Utils
         /// </summary>
         public ParserContext()
         {
-            // Copy the token over to a new token.
-            Token = new Tokenizer.Token();
+            Token = new();
         }
 
         /// <summary>
@@ -57,5 +56,18 @@ namespace BLang.Utils
         /// The error state.
         /// </summary>
         public ErrorLogger ErrorLogger { get; private set; } = new();
+
+        public void AddToken(Tokenizer.Token token, Parser.eNonTerminal context)
+        {
+            mContext.Add(context);
+            mFirstPassTokens.Add(new Tokenizer.Token(token));
+        }
+
+        /// <summary>
+        /// This list gets filled in by the first pass. It should ensure this follows correct syntax
+        /// if no fatal errors have been found.
+        /// </summary>
+        private List<Parser.eNonTerminal> mContext = new();
+        private List<Tokenizer.Token> mFirstPassTokens = new();
     }
 }
