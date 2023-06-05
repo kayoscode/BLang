@@ -164,7 +164,7 @@ namespace BLang
             {
                 AdvanceToken();
 
-                while (IsModItem() && !mAtEOF)
+                while (ParserUtils.IsModItem(mToken) && !mAtEOF)
                 {
                     ModItem();
                 }
@@ -329,7 +329,7 @@ namespace BLang
         {
             LogEnterNonTerminal(eNonTerminal.StatementList);
 
-            while (IsStatementToken() && !mAtEOF)
+            while (ParserUtils.IsStatementToken(mToken) && !mAtEOF)
             {
                 Statement();
             }
@@ -367,7 +367,7 @@ namespace BLang
             LogEnterNonTerminal(eNonTerminal.ArrayIndex);
             AdvanceToken();
 
-            if (IsExpressionStartToken())
+            if (ParserUtils.IsExpressionStartToken(mToken))
             {
                 Expression();
 
@@ -400,7 +400,7 @@ namespace BLang
                 AdvanceToken();
 
                 // For loop header body.
-                if (IsCodeStatementToken())
+                if (ParserUtils.IsCodeStatementToken(mToken))
                 {
                     CodeStatement();
                 }
@@ -749,7 +749,7 @@ namespace BLang
             {
                 ReturnStatement();
             }
-            else if (IsCodeStatementToken())
+            else if (ParserUtils.IsCodeStatementToken(mToken))
             {
                 CodeStatement();
             }
@@ -777,7 +777,7 @@ namespace BLang
                 // Empty line.
                 AdvanceToken();
             }
-            else if (IsExpressionStartToken())
+            else if (ParserUtils.IsExpressionStartToken(mToken))
             {
                 Expression();
 
@@ -797,66 +797,6 @@ namespace BLang
             }
 
             LogExitNonTerminal(eNonTerminal.CodeStatement);
-        }
-
-        #region Utilities
-
-        /// <summary>
-        /// Whether the token represents a constant.
-        /// </summary>
-        /// <returns></returns>
-        private bool IsConstant()
-        {
-            return mToken.Type == eTokenType.Integer ||
-                   mToken.Type == eTokenType.FloatingPoint ||
-                   mToken.Type == eTokenType.Char ||
-                   mToken.Type == eTokenType.String ||
-                   mToken.Code == eReserveWord.True.Code() ||
-                   mToken.Code == eReserveWord.False.Code();
-        }
-
-
-        /// <summary>
-        /// The set of all tokens that can be used in a statement as part of a function body.
-        /// </summary>
-        /// <returns></returns>
-        private bool IsStatementToken()
-        {
-            return 
-                   // Logic statement
-                   mToken.Code == eReserveWord.If.Code() ||
-                   // Loop statement
-                   mToken.Code == eReserveWord.While.Code() ||
-                   mToken.Code == eReserveWord.For.Code() ||
-                   // Function call
-                   mToken.Code == eReserveWord.Return.Code() ||
-                   IsCodeStatementToken();
-        }
-
-        /// <summary>
-        /// The subset of statements that can be used as an individual command.
-        /// </summary>
-        /// <returns></returns>
-        private bool IsCodeStatementToken()
-        {
-            return mToken.Code == eReserveWord.Let.Code() ||        // Varaible creation.
-                   // Possible expression.
-                   IsExpressionStartToken() ||
-
-                   // Empty statement.
-                   mToken.Code == eOneCharSyntaxToken.Semi.Code();
-        }
-
-        /// <summary>
-        /// Is the token an item that belongs inside of a module definition.
-        /// </summary>
-        /// <returns></returns>
-        private bool IsModItem()
-        {
-            return (mToken.Code == eReserveWord.Module.Code() ||
-                    mToken.Code == eReserveWord.Function.Code() ||
-                    //mToken.Code == eReserveWord.) DATA STRUCTURES
-                    mToken.Code == eReserveWord.Let.Code());
         }
 
         private void AdvanceToken()
@@ -890,8 +830,6 @@ namespace BLang
             }
 #endif
         }
-
-        #endregion
 
         public ParserContext ParserContext => mParserContext;
         private ParserContext mParserContext = new();

@@ -1,6 +1,6 @@
 ﻿using BLang.Error;
 
-namespace BLang
+namespace BLang.Utils
 {
     /// <summary>
     /// Class storing relevant information about the parser at any moment in time.

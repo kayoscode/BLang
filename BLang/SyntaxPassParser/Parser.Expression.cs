@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using BLang.Utils;
+using System.Diagnostics;
 
 namespace BLang
 {
@@ -28,7 +29,7 @@ namespace BLang
 
         private void ExpressionAssignmentOperatorTail()
         {
-            if (IsAssignmentOperator())
+            if (ParserUtils.IsAssignmentOperator(mToken))
             {
                 AdvanceToken();
                 ExpressionIfExpression();
@@ -41,7 +42,7 @@ namespace BLang
         {
             ExpressionLogicalOr();
 
-            if (IsIfExpression())
+            if (ParserUtils.IsIfExpression(mToken))
             {
                 IfExpression();
             }
@@ -56,7 +57,7 @@ namespace BLang
 
         private void ExpressionLogicalOrTail()
         {
-            if (IsLogicalOr())
+            if (ParserUtils.IsLogicalOr(mToken))
             {
                 AdvanceToken();
                 ExpressionLogicalAnd();
@@ -73,7 +74,7 @@ namespace BLang
 
         private void ExpressionLogicalAndTail()
         {
-            if (IsLogicalAnd())
+            if (ParserUtils.IsLogicalAnd(mToken))
             {
                 AdvanceToken();
                 ExpressionBitwiseOr();
@@ -90,7 +91,7 @@ namespace BLang
 
         private void ExpressionBitwiseOrTail()
         {
-            if (IsBitwiseOr())
+            if (ParserUtils.IsBitwiseOr(mToken))
             {
                 AdvanceToken();
                 ExpressionBitwiseXor();
@@ -107,7 +108,7 @@ namespace BLang
 
         private void ExpressionBitwiseXorTail()
         {
-            if (IsBitwiseXor())
+            if (ParserUtils.IsBitwiseXor(mToken))
             {
                 AdvanceToken();
                 ExpressionBitwiseAnd();
@@ -124,7 +125,7 @@ namespace BLang
 
         private void ExpressionBitwiseAndTail()
         {
-            if (IsBitwiseAnd())
+            if (ParserUtils.IsBitwiseAnd(mToken))
             {
                 AdvanceToken();
                 ExpressionEqNeq();
@@ -141,7 +142,7 @@ namespace BLang
 
         private void ExpressionEqNeqTail()
         {
-            if (IsEqOrNeq())
+            if (ParserUtils.IsEqOrNeq(mToken))
             {
                 AdvanceToken();
                 ExpressionRelational();
@@ -158,7 +159,7 @@ namespace BLang
 
         private void ExpressionRelationalTail()
         {
-            if (IsRelational())
+            if (ParserUtils.IsRelational(mToken))
             {
                 AdvanceToken();
                 ExpressionLogicalShift();
@@ -175,7 +176,7 @@ namespace BLang
 
         private void ExpressionLogicalShiftTail()
         {
-            if (IsLogicalShift())
+            if (ParserUtils.IsLogicalShift(mToken))
             {
                 AdvanceToken();
                 ExpressionAdd();
@@ -192,7 +193,7 @@ namespace BLang
 
         private void ExpressionAddTail()
         {
-            if (IsAddOp())
+            if (ParserUtils.IsAddOp(mToken))
             {
                 AdvanceToken();
                 ExpressionTerm();
@@ -209,7 +210,7 @@ namespace BLang
 
         private void ExpressionTermTail()
         {
-            if (IsMul())
+            if (ParserUtils.IsMul(mToken))
             {
                 AdvanceToken();
                 ExpressionPrefix();
@@ -227,7 +228,7 @@ namespace BLang
 
         private void ExpressionPrefixTail()
         {
-            if (IsExpressionPrefix())
+            if (ParserUtils.IsExpressionPrefix(mToken))
             {
                 AdvanceToken();
                 ExpressionPrefixTail();
@@ -243,7 +244,7 @@ namespace BLang
 
         private void ExpressionPostFixTail()
         {
-            if (IsExpressionPostFix())
+            if (ParserUtils.IsExpressionPostFix(mToken))
             {
                 PostFixOp();
                 ExpressionPostFixTail();
@@ -252,7 +253,7 @@ namespace BLang
 
         private void PostFixOp()
         {
-            if (IsIncDec())
+            if (ParserUtils.IsIncDec(mToken))
             {
                 AdvanceToken();
             }
@@ -276,7 +277,7 @@ namespace BLang
         private void ExpressionFactor()
         {
             // Handle the different types of individual values you can receive.
-            if (IsExprAtom())
+            if (ParserUtils.IsExprAtom(mToken))
             {
                 ExpressionAtom();
             }
@@ -295,7 +296,7 @@ namespace BLang
                     Debugger.Break();
                 }
             }
-            else if (IsIfExpression())
+            else if (ParserUtils.IsIfExpression(mToken))
             {
                 // Don't need to do anything, we will handle the if expression upstream.
             }
@@ -308,7 +309,7 @@ namespace BLang
 
         private void ExpressionAtom()
         {
-            if (IsConstant())
+            if (ParserUtils.IsConstant(mToken))
             {
                 AdvanceToken();
             }
@@ -401,132 +402,5 @@ namespace BLang
 
             LogExitNonTerminal(eNonTerminal.IfExpression);
         }
-
-        #region Utilities
-
-        private bool IsAssignmentOperator()
-        {
-            return mToken.Code == eOneCharSyntaxToken.Equal.Code() ||
-                   mToken.Code == eTwoCharSyntaxToken.AddEquals.Code() ||
-                   mToken.Code == eTwoCharSyntaxToken.SubEquals.Code() ||
-                   mToken.Code == eTwoCharSyntaxToken.MulEquals.Code() ||
-                   mToken.Code == eTwoCharSyntaxToken.DivEquals.Code() ||
-                   mToken.Code == eTwoCharSyntaxToken.ModEquals.Code() ||
-                   mToken.Code == eTwoCharSyntaxToken.AndEquals.Code() ||
-                   mToken.Code == eTwoCharSyntaxToken.XorEquals.Code() ||
-                   mToken.Code == eTwoCharSyntaxToken.OrEquals.Code() ||
-                   mToken.Code == eThreeCharSyntaxToken.LslEquals.Code() ||
-                   mToken.Code == eThreeCharSyntaxToken.LsrEquals.Code();
-        }
-
-        private bool IsIfExpression()
-        {
-            return mToken.Code == eReserveWord.If.Code();
-        }
-
-        private bool IsLogicalOr()
-        {
-            return mToken.Code == eTwoCharSyntaxToken.LogicalOr.Code();
-        }
-
-        private bool IsLogicalAnd()
-        {
-            return mToken.Code == eTwoCharSyntaxToken.LogicalAnd.Code();
-        }
-
-        private bool IsBitwiseAnd()
-        {
-            return mToken.Code == eOneCharSyntaxToken.And.Code();
-        }
-
-        private bool IsBitwiseXor()
-        {
-            return mToken.Code == eOneCharSyntaxToken.Xor.Code();
-        }
-
-        private bool IsBitwiseOr()
-        {
-            return mToken.Code == eOneCharSyntaxToken.Or.Code();
-        }
-
-        private bool IsEqOrNeq()
-        {
-            return mToken.Code == eTwoCharSyntaxToken.AreEqual.Code() ||
-                   mToken.Code == eTwoCharSyntaxToken.NotEqual.Code();
-        }
-
-        private bool IsRelational()
-        {
-            return mToken.Code == eOneCharSyntaxToken.CloseAngleBrace.Code() ||
-                   mToken.Code == eOneCharSyntaxToken.OpenAngleBrace.Code() ||
-                   mToken.Code == eTwoCharSyntaxToken.Gte.Code() ||
-                   mToken.Code == eTwoCharSyntaxToken.Lte.Code();
-        }
-
-        private bool IsAddOp()
-        {
-            return mToken.Code == eOneCharSyntaxToken.Plus.Code() ||
-                   mToken.Code == eOneCharSyntaxToken.Minus.Code();
-        }
-
-        private bool IsMul()
-        {
-            return mToken.Code == eOneCharSyntaxToken.Star.Code() ||
-                   mToken.Code == eOneCharSyntaxToken.Divide.Code() ||
-                   mToken.Code == eOneCharSyntaxToken.Mod.Code();
-        }
-
-        private bool IsLogicalShift()
-        {
-            return mToken.Code == eTwoCharSyntaxToken.LogicalShiftRight.Code() ||
-                   mToken.Code == eTwoCharSyntaxToken.LogicalShiftLeft.Code();
-        }
-
-        private bool IsExprAtom()
-        {
-            return IsConstant() ||
-                   mToken.Type == eTokenType.Identifier;
-        }
-
-        /// <summary>
-        /// Determines whether the token could represent a valid expression.
-        /// </summary>
-        private bool IsExpressionStartToken()
-        {
-            return mToken.Type == eTokenType.Identifier ||
-                   mToken.Code == eOneCharSyntaxToken.OpenPar.Code() ||
-                   mToken.Code == eReserveWord.If.Code() ||
-                   IsExpressionPrefix() ||
-                   IsConstant();
-        }
-
-        /// <summary>
-        /// Whether the token is an increment or decrement token.
-        /// </summary>
-        /// <returns></returns>
-        private bool IsIncDec()
-        {
-            return mToken.Code == eTwoCharSyntaxToken.Increment.Code() ||
-                   mToken.Code == eTwoCharSyntaxToken.Decrement.Code();
-        }
-
-        private bool IsExpressionPrefix()
-        {
-            return mToken.Code == eOneCharSyntaxToken.Not.Code() ||
-                   mToken.Code == eOneCharSyntaxToken.Minus.Code() ||
-                   mToken.Code == eOneCharSyntaxToken.Compliment.Code() ||
-                   IsIncDec();
-        }
-
-        private bool IsExpressionPostFix()
-        {
-            return IsIncDec() ||
-                   // function call postfix.
-                   mToken.Code == eOneCharSyntaxToken.OpenPar.Code() ||
-                   // Array subscript.
-                   mToken.Code == eOneCharSyntaxToken.OpenBrack.Code();
-        }
-
-        #endregion
     }
 }
