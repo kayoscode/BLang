@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using BLang.Utils;
 
 namespace BLang.Error
 {
@@ -67,6 +68,26 @@ namespace BLang.Error
             // TODO: file name.
             Console.WriteLine($"{Level}[{ErrorType.ErrorCode()}] {ErrorType.Name()} on Ln: {Context.CurrentLine} Ch: {Context.CurrentChar}");
             Console.WriteLine(Message);
+        }
+    }
+
+    /// <summary>
+    /// Base class for all errors that happen during tokenization.
+    /// </summary>
+    public abstract class LexicalError : ParseError
+    {
+        protected LexicalError(ParserContext context) 
+            : base(context)
+        {
+        }
+
+        /// <summary>
+        /// Lexical errors cannot manipulate the token stream.
+        /// </summary>
+        /// <returns></returns>
+        protected override sealed bool ChildRecoverFromError()
+        {
+            return true;
         }
     }
 

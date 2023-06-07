@@ -1,6 +1,6 @@
 ﻿using BLang.Error;
 
-namespace BLang
+namespace BLang.Utils
 {
     /// <summary>
     /// Class storing relevant information about the parser at any moment in time.
@@ -12,8 +12,7 @@ namespace BLang
         /// </summary>
         public ParserContext()
         {
-            // Copy the token over to a new token.
-            Token = new Tokenizer.Token();
+            Token = new();
         }
 
         /// <summary>
@@ -39,6 +38,7 @@ namespace BLang
         public void AdvanceLineAndChar(char mChar)
         {
             // Adjust line and column counters as needed.
+            // Moves to a new line if \n is found.
             if (mChar == '\n')
             {
                 CurrentLine++;
@@ -57,5 +57,18 @@ namespace BLang
         /// The error state.
         /// </summary>
         public ErrorLogger ErrorLogger { get; private set; } = new();
+
+        public void AddToken(Tokenizer.Token token, Parser.eNonTerminal context)
+        {
+            mContext.Add(context);
+            mFirstPassTokens.Add(new Tokenizer.Token(token));
+        }
+
+        /// <summary>
+        /// This list gets filled in by the first pass. It should ensure this follows correct syntax
+        /// if no fatal errors have been found.
+        /// </summary>
+        private List<Parser.eNonTerminal> mContext = new();
+        private List<Tokenizer.Token> mFirstPassTokens = new();
     }
 }

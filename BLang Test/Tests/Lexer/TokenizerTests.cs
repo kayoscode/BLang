@@ -1,5 +1,6 @@
 ﻿using BLang.Error;
 using BLang.Syntax;
+using BLang.Utils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NuGet.Frameworks;
 using System.Security.Cryptography.X509Certificates;

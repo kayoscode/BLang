@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using BLang.Utils;
 
 namespace BLang.Error
 {
@@ -6,7 +7,7 @@ namespace BLang.Error
     /// Error created when a token is not recognized by the system.
     /// This error terminates the entire compilation process.
     /// </summary>
-    public class UnexpectedCharacter : ParseError
+    public class UnexpectedCharacter : LexicalError
     {
         public UnexpectedCharacter(ParserContext context) 
             : base(context)
@@ -24,14 +25,9 @@ namespace BLang.Error
         public override eParseError ErrorType => eParseError.UnexpectedCharacter;
 
         public override eErrorLevel Level => eErrorLevel.Error;
-
-        protected override bool ChildRecoverFromError()
-        {
-            return true;
-        }
     }
 
-    public class InvalidRealLiteral : ParseError
+    public class InvalidRealLiteral : LexicalError
     {
         public InvalidRealLiteral(ParserContext context)
             : base(context)
@@ -49,15 +45,9 @@ namespace BLang.Error
         public override eParseError ErrorType => eParseError.InvalidRealLiteral;
 
         public override eErrorLevel Level => eErrorLevel.Error;
-
-        protected override bool ChildRecoverFromError()
-        {
-            // Continue and just skip this token.
-            return true;
-        }
     }
 
-    public class TooManyCharactersInCharLiteral : ParseError
+    public class TooManyCharactersInCharLiteral : LexicalError
     {
         public TooManyCharactersInCharLiteral(ParserContext context)
             : base(context)
@@ -75,15 +65,9 @@ namespace BLang.Error
         public override eParseError ErrorType => eParseError.TooManyCharactersInCharLiteral;
 
         public override eErrorLevel Level => eErrorLevel.Error;
-
-        protected override bool ChildRecoverFromError()
-        {
-            // Get tokens until we reach the end of the line, or another single quote.
-            return true;
-        }
     }
 
-    public class EmptyCharLiteral : ParseError
+    public class EmptyCharLiteral : LexicalError
     {
         public EmptyCharLiteral(ParserContext context)
             : base(context)
@@ -101,15 +85,9 @@ namespace BLang.Error
         public override eParseError ErrorType => eParseError.EmptyCharLiteral;
 
         public override eErrorLevel Level => eErrorLevel.Error;
-
-        protected override bool ChildRecoverFromError()
-        {
-            // Get tokens until we reach the end of the line, or another single quote.
-            return true;
-        }
     }
 
-    public class InvalidNumberLiteral : ParseError
+    public class InvalidNumberLiteral : LexicalError
     {
         public InvalidNumberLiteral(ParserContext context)
             : base(context)
@@ -127,15 +105,9 @@ namespace BLang.Error
         public override eParseError ErrorType => eParseError.InvalidNumberLiteral;
 
         public override eErrorLevel Level => eErrorLevel.Error;
-
-        protected override bool ChildRecoverFromError()
-        {
-            // Continue and just skip this token.
-            return true;
-        }
     }
 
-    public class UnrecognizedEscapeSequence : ParseError
+    public class UnrecognizedEscapeSequence : LexicalError
     {
         public UnrecognizedEscapeSequence(ParserContext context)
             : base(context)
@@ -153,26 +125,15 @@ namespace BLang.Error
         public override eParseError ErrorType => eParseError.UnrecognizedEscapeSequence;
 
         public override eErrorLevel Level => eErrorLevel.Error;
-
-        protected override bool ChildRecoverFromError()
-        {
-            // Continue and just skip this token.
-            return true;
-        }
     }
 
-    public class NewLineInLiteral : ParseError
+    public class NewLineInLiteral : LexicalError
     {
         public NewLineInLiteral(ParserContext context, eTokenType type)
             : base(context)
         {
             Trace.Assert(type == eTokenType.String || type == eTokenType.Char);
             mType = type;
-        }
-
-        protected override bool ChildRecoverFromError()
-        {
-            return true;
         }
 
         public override eErrorLevel Level => eErrorLevel.Error;

@@ -14,6 +14,13 @@
             this includes errors caused by incorrectly formatted numbers or strings.
             """)]
         Tokenization,
+        [ParseErrorSeries(seriesPrefix: "SN",
+            description: """
+            Errors that can be found in the first pass of the parser.
+            Includes things like missing tokens or syntax that does not make sense in the context
+            it's given
+            """)]
+        Syntax
     }
 
     public enum eParseError

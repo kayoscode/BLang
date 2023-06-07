@@ -4,45 +4,6 @@ using System.Diagnostics;
 
 namespace BLang
 {
-    /// <summary>
-    /// File structure:
-    /// 
-    /// Each file must start with import statements pointing to each of the modules they want to import.
-    /// Then it must have the keyword "mod" then open and closing braces to show whats actually inside the module
-    /// 
-    /// By default, everything inside of a module is private to that module, but functions and variables inside
-    /// can include the keyword (or block) "public" which makes them accessible from anywhere.
-    /// 
-    /// Identifier: [_A-z]+[_A-z0-9]*
-    /// Number: Any number token
-    /// StringLiteral: "...text..."
-    /// Value: Identifier | Number | StringLiteral
-    /// OptionalType: /**empty*/ | : Type
-    /// Type: i8 | i16 | i32 | i64 | f32 | f64 | bool | char | Identifier
-    /// 
-    /// VariableCreation: VariableAssignment | VariableDeclaration
-    /// VariableAssignment: let Identifier OptionalType = Expression;
-    /// VariableDeclaration: let Identifier : Type;
-    /// 
-    /// ModBlock: mod { List<ModBlockItem> } 
-    /// ModBlockItem: ModBlock | Function | DataStructure | VariableCreation
-    /// 
-    /// Function: fn Identifier OptionalReturn ( CalleeParamList ) Block
-    /// Block: -> Statement | { List<Statement> }
-    /// CalleeParamList: CommaSeparatedList<CalleeParam>
-    /// CalleeParam: Identifier: Type
-    /// 
-    /// Statement: VariableCreation | LogicalStatement | LoopStatement | FunctionCall | ReturnStatement
-    /// 
-    /// LogicalStatement: if Expression Block OptionalElseBlock
-    /// OptionalElseBlock else LogicalStatement | else Block
-    /// 
-    /// FunctionCall: Identifier ( CallerParamList ) ;
-    /// ReturnStatement: return Expression ;
-    /// CallerParamList: CommaSeparatedList<CallerParam>
-    /// CallerParam: Expression
-    /// 
-    /// </summary>
     public partial class Parser
     {
         /// <summary>
@@ -73,10 +34,10 @@ namespace BLang
                 Debugger.Break();
             }
 
-            if (mAtEOF && 
+            if (mIsEof && 
                 ErrorLogger.ErrorCount == 0)
             {
-                Console.WriteLine("File parsed to completion");
+                Console.WriteLine("File parsed to completion.");
             }
         }
 
@@ -88,7 +49,7 @@ namespace BLang
             LogEnterNonTerminal(eNonTerminal.File);
 
             // Load the import statements. They can only appear at the top.
-            while (mToken.Code == eReserveWord.Import.Code() && !mAtEOF)
+            while (mToken.Code == eReserveWord.Import.Code() && !mIsEof)
             {
                 ImportStatement();
             }
@@ -164,7 +125,7 @@ namespace BLang
             {
                 AdvanceToken();
 
-                while (IsModItem() && !mAtEOF)
+                while (ParserUtils.IsModItem(mToken) && !mIsEof)
                 {
                     ModItem();
                 }
@@ -303,7 +264,7 @@ namespace BLang
                 Debugger.Break();
             }
 
-            LogEnterNonTerminal(eNonTerminal.CodeBlock);
+            LogExitNonTerminal(eNonTerminal.CodeBlock);
         }
 
         /// <summary>
@@ -329,7 +290,7 @@ namespace BLang
         {
             LogEnterNonTerminal(eNonTerminal.StatementList);
 
-            while (IsStatementToken() && !mAtEOF)
+            while (ParserUtils.IsStatementToken(mToken) && !mIsEof)
             {
                 Statement();
             }
@@ -367,7 +328,7 @@ namespace BLang
             LogEnterNonTerminal(eNonTerminal.ArrayIndex);
             AdvanceToken();
 
-            if (IsExpressionStartToken())
+            if (ParserUtils.IsExpressionStartToken(mToken))
             {
                 Expression();
 
@@ -400,7 +361,7 @@ namespace BLang
                 AdvanceToken();
 
                 // For loop header body.
-                if (IsCodeStatementToken())
+                if (ParserUtils.IsCodeStatementToken(mToken))
                 {
                     CodeStatement();
                 }
@@ -533,7 +494,7 @@ namespace BLang
                 CallerParams();
             }
 
-            LogEnterNonTerminal(eNonTerminal.RequiredCallerParams);
+            LogExitNonTerminal(eNonTerminal.RequiredCallerParams);
         }
 
         /// <summary>
@@ -749,7 +710,7 @@ namespace BLang
             {
                 ReturnStatement();
             }
-            else if (IsCodeStatementToken())
+            else if (ParserUtils.IsCodeStatementToken(mToken))
             {
                 CodeStatement();
             }
@@ -777,7 +738,7 @@ namespace BLang
                 // Empty line.
                 AdvanceToken();
             }
-            else if (IsExpressionStartToken())
+            else if (ParserUtils.IsExpressionStartToken(mToken))
             {
                 Expression();
 
@@ -799,80 +760,27 @@ namespace BLang
             LogExitNonTerminal(eNonTerminal.CodeStatement);
         }
 
-        #region Utilities
-
-        /// <summary>
-        /// Whether the token represents a constant.
-        /// </summary>
-        /// <returns></returns>
-        private bool IsConstant()
-        {
-            return mToken.Type == eTokenType.Integer ||
-                   mToken.Type == eTokenType.FloatingPoint ||
-                   mToken.Type == eTokenType.Char ||
-                   mToken.Type == eTokenType.String ||
-                   mToken.Code == eReserveWord.True.Code() ||
-                   mToken.Code == eReserveWord.False.Code();
-        }
-
-
-        /// <summary>
-        /// The set of all tokens that can be used in a statement as part of a function body.
-        /// </summary>
-        /// <returns></returns>
-        private bool IsStatementToken()
-        {
-            return 
-                   // Logic statement
-                   mToken.Code == eReserveWord.If.Code() ||
-                   // Loop statement
-                   mToken.Code == eReserveWord.While.Code() ||
-                   mToken.Code == eReserveWord.For.Code() ||
-                   // Function call
-                   mToken.Code == eReserveWord.Return.Code() ||
-                   IsCodeStatementToken();
-        }
-
-        /// <summary>
-        /// The subset of statements that can be used as an individual command.
-        /// </summary>
-        /// <returns></returns>
-        private bool IsCodeStatementToken()
-        {
-            return mToken.Code == eReserveWord.Let.Code() ||        // Varaible creation.
-                   // Possible expression.
-                   IsExpressionStartToken() ||
-
-                   // Empty statement.
-                   mToken.Code == eOneCharSyntaxToken.Semi.Code();
-        }
-
-        /// <summary>
-        /// Is the token an item that belongs inside of a module definition.
-        /// </summary>
-        /// <returns></returns>
-        private bool IsModItem()
-        {
-            return (mToken.Code == eReserveWord.Module.Code() ||
-                    mToken.Code == eReserveWord.Function.Code() ||
-                    //mToken.Code == eReserveWord.) DATA STRUCTURES
-                    mToken.Code == eReserveWord.Let.Code());
-        }
-
         private void AdvanceToken()
         {
-            mAtEOF = !mTokenizer.NextToken();
+            mIsEof = !mTokenizer.NextToken();
+            mParserContext.AddToken(mToken, mCurrentContext);
 
 #if (DEBUG)
-            if (AppSettings.LogParserDetails)
+            if (!mIsEof)
             {
-                mToken.PrintTokenShort();
+                if (AppSettings.LogParserDetails)
+                {
+                    mToken.PrintTokenShort();
+                }
             }
 #endif
         }
 
         private void LogEnterNonTerminal(eNonTerminal nt)
         {
+            mContext.Push(nt);
+            mCurrentContext = nt;
+
 #if (DEBUG)
             if (AppSettings.LogParserDetails)
             {
@@ -883,6 +791,10 @@ namespace BLang
 
         private void LogExitNonTerminal(eNonTerminal nt)
         {
+            Trace.Assert(mContext.Count > 0);
+            Trace.Assert(nt == mContext.Peek());
+            mCurrentContext = mContext.Pop();
+
 #if (DEBUG)
             if (AppSettings.LogParserDetails)
             {
@@ -891,13 +803,14 @@ namespace BLang
 #endif
         }
 
-        #endregion
-
         public ParserContext ParserContext => mParserContext;
         private ParserContext mParserContext = new();
         private Tokenizer mTokenizer;
         private Tokenizer.Token mToken;
-        private bool mAtEOF = false;
+        private bool mIsEof = false;
+
+        private Stack<eNonTerminal> mContext = new();
+        private eNonTerminal mCurrentContext = eNonTerminal.File;
 
         public ErrorLogger ErrorLogger => ParserContext.ErrorLogger;
     }
