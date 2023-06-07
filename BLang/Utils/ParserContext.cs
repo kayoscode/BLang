@@ -13,6 +13,8 @@ namespace BLang.Utils
         public ParserContext()
         {
             Token = new();
+            mContext = new();
+            mFirstPassTokens = new();
         }
 
         /// <summary>
@@ -24,6 +26,9 @@ namespace BLang.Utils
             Token = new Tokenizer.Token(other.Token);
             CurrentLine = other.CurrentLine;
             CurrentChar = other.CurrentChar;
+
+            mContext = other.mContext;
+            mFirstPassTokens = other.mFirstPassTokens;
         }
 
         // Symbol table
@@ -65,10 +70,15 @@ namespace BLang.Utils
         }
 
         /// <summary>
+        /// The current context we are working within.
+        /// </summary>
+        public Parser.eNonTerminal CurrentContext => mContext[mContext.Count - 1];
+
+        /// <summary>
         /// This list gets filled in by the first pass. It should ensure this follows correct syntax
         /// if no fatal errors have been found.
         /// </summary>
-        private List<Parser.eNonTerminal> mContext = new();
-        private List<Tokenizer.Token> mFirstPassTokens = new();
+        private List<Parser.eNonTerminal> mContext;
+        private List<Tokenizer.Token> mFirstPassTokens;
     }
 }

@@ -60,8 +60,7 @@ namespace BLang
             }
             else
             {
-                // AddError() fatal
-                Debugger.Break();
+                ErrorLogger.LogError(new InvalidTokenAtFileLevel(mParserContext));
             }
 
             LogExitNonTerminal(eNonTerminal.File);
@@ -96,8 +95,7 @@ namespace BLang
             }
             else
             {
-                // AddError();
-                Debugger.Break();
+                ErrorLogger.LogError(new MissingIdentifier(mParserContext));
             }
 
             LogExitNonTerminal(eNonTerminal.ImportStatement);

@@ -115,6 +115,50 @@
         NewLineInCharLiteral,
 
         #endregion
+
+        #region Syntax errors
+
+        [ParseError("Unexpected Token in File", eParseErrorSeries.Syntax,
+            description: """
+            Invalid token found at file level. A file must include import statements at the top
+            followed by a module block.
+            """)]
+        UnexpectedTokenAtFileLevel,
+        [ParseError("Identifier Expected", eParseErrorSeries.Syntax,
+            description: """
+            You did not give an identifier. An identifier is the name of a variable or function.
+            """)]
+        IdentifierExpected,
+        [ParseError("Type Expected", eParseErrorSeries.Syntax,
+            description: """
+            You did not give a type for the variable definition. A colon was added indicating
+            the variable has a type, but no valid type was specified.
+            """)]
+        TypeExpected,
+        [ParseError("Missing Initializer", eParseErrorSeries.Syntax,
+            description: """
+            A variable was declared without an explicit type and must be initialized.
+            """)]
+        MissingInitializer,
+        [ParseError("Missing Semicolon", eParseErrorSeries.Syntax,
+            description: """
+            The compiler found a missing semicolon deliminating the end of a statement. A statement may
+            consume more than one line but must end with a semicolon.
+            """)]
+        MissingSemicolon,
+        [ParseError("Missing Syntax Token", eParseErrorSeries.Syntax,
+            description: """
+            The compiler found a missing syntax token. Examples include closing array indices or missing
+            commas in argument lists.
+            """)]
+        MissingSyntaxToken,
+        [ParseError("Duplicate Access Modifier", eParseErrorSeries.Syntax,
+            description: """
+            An access modifier was specified more than once.
+            """)]
+        DuplicateAccessModifier,
+
+        #endregion
     }
 
     /// <summary>

@@ -1,4 +1,5 @@
 ﻿using BLang;
+using BLang.Error;
 using BLang.SelfDocumentation;
 using BLang.SelfDocumenter;
 using BLang.Utils;
@@ -28,6 +29,10 @@ public class Program
             try
             {
                 parser.ParseFile(reader);
+            }
+            catch (CriticalErrorException)
+            {
+                Console.WriteLine("The parser has encountered a critical error");
             }
             finally
             {
