@@ -38,6 +38,7 @@ namespace BLang.Utils
         public void AdvanceLineAndChar(char mChar)
         {
             // Adjust line and column counters as needed.
+            // Moves to a new line if \n is found.
             if (mChar == '\n')
             {
                 CurrentLine++;

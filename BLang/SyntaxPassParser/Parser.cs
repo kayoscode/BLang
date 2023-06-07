@@ -4,45 +4,6 @@ using System.Diagnostics;
 
 namespace BLang
 {
-    /// <summary>
-    /// File structure:
-    /// 
-    /// Each file must start with import statements pointing to each of the modules they want to import.
-    /// Then it must have the keyword "mod" then open and closing braces to show whats actually inside the module
-    /// 
-    /// By default, everything inside of a module is private to that module, but functions and variables inside
-    /// can include the keyword (or block) "public" which makes them accessible from anywhere.
-    /// 
-    /// Identifier: [_A-z]+[_A-z0-9]*
-    /// Number: Any number token
-    /// StringLiteral: "...text..."
-    /// Value: Identifier | Number | StringLiteral
-    /// OptionalType: /**empty*/ | : Type
-    /// Type: i8 | i16 | i32 | i64 | f32 | f64 | bool | char | Identifier
-    /// 
-    /// VariableCreation: VariableAssignment | VariableDeclaration
-    /// VariableAssignment: let Identifier OptionalType = Expression;
-    /// VariableDeclaration: let Identifier : Type;
-    /// 
-    /// ModBlock: mod { List<ModBlockItem> } 
-    /// ModBlockItem: ModBlock | Function | DataStructure | VariableCreation
-    /// 
-    /// Function: fn Identifier OptionalReturn ( CalleeParamList ) Block
-    /// Block: -> Statement | { List<Statement> }
-    /// CalleeParamList: CommaSeparatedList<CalleeParam>
-    /// CalleeParam: Identifier: Type
-    /// 
-    /// Statement: VariableCreation | LogicalStatement | LoopStatement | FunctionCall | ReturnStatement
-    /// 
-    /// LogicalStatement: if Expression Block OptionalElseBlock
-    /// OptionalElseBlock else LogicalStatement | else Block
-    /// 
-    /// FunctionCall: Identifier ( CallerParamList ) ;
-    /// ReturnStatement: return Expression ;
-    /// CallerParamList: CommaSeparatedList<CallerParam>
-    /// CallerParam: Expression
-    /// 
-    /// </summary>
     public partial class Parser
     {
         /// <summary>
