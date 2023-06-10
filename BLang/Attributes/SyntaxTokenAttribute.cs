@@ -87,6 +87,21 @@
             return (int)token + THREE_CHAR_TOKEN_START;
         }
 
+        public static string AsLexeme(this eOneCharSyntaxToken token)
+        {
+            return $"{token.Char()}";
+        }
+
+        public static string AsLexeme(this eTwoCharSyntaxToken token)
+        {
+            return $"{token.Char1()}{token.Char2()}";
+        }
+
+        public static string AsLexeme(this eThreeCharSyntaxToken token)
+        {
+            return $"{token.Char1()}{token.Char2()}{token.Char3()}";
+        }
+
         private static readonly AttributeCacheHelper<OneCharSyntaxTokenAttribute, eOneCharSyntaxToken> mCacheHelper = new();
         private static readonly AttributeCacheHelper<TwoCharSyntaxTokenAttribute, eTwoCharSyntaxToken> mTwoCharCacheHelper = new();
         private static readonly AttributeCacheHelper<ThreeCharSyntaxTokenAttribute, eThreeCharSyntaxToken> mThreeCharCacheHelper = new();

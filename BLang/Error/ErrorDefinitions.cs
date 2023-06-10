@@ -128,13 +128,13 @@
             description: """
             You did not give an identifier. An identifier is the name of a variable or function.
             """)]
-        IdentifierExpected,
+        MissingIdentifier,
         [ParseError("Type Expected", eParseErrorSeries.Syntax,
             description: """
             You did not give a type for the variable definition. A colon was added indicating
             the variable has a type, but no valid type was specified.
             """)]
-        TypeExpected,
+        MissingTypeSpecifier,
         [ParseError("Missing Initializer", eParseErrorSeries.Syntax,
             description: """
             A variable was declared without an explicit type and must be initialized.
@@ -152,13 +152,18 @@
             commas in argument lists.
             """)]
         MissingSyntaxToken,
-        [ParseError("Duplicate Access Modifier", eParseErrorSeries.Syntax,
+
+        #endregion
+
+        /**
+        SEMANTICS ERROR
+        [ParseError("Duplicate Access Modifier", eParseErrorSeries.Semantics
             description: """
             An access modifier was specified more than once.
             """)]
         DuplicateAccessModifier,
+        */
 
-        #endregion
     }
 
     /// <summary>
