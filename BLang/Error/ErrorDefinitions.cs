@@ -124,6 +124,11 @@
             followed by a module block.
             """)]
         UnexpectedTokenAtFileLevel,
+        [ParseError("Unexpected Token", eParseErrorSeries.Syntax,
+            description: """
+            An invalid token was found in the current context.
+            """)]
+        UnexpectedToken,
         [ParseError("Identifier Expected", eParseErrorSeries.Syntax,
             description: """
             You did not give an identifier. An identifier is the name of a variable or function.
@@ -152,6 +157,27 @@
             commas in argument lists.
             """)]
         MissingSyntaxToken,
+        [ParseError("Missing Expression", eParseErrorSeries.Syntax,
+            description: """
+            The compiler did not find an expression when it was required.
+            """)]
+        MissingExpression,
+        [ParseError("Expected Function Body", eParseErrorSeries.Syntax,
+            description: """
+            A function was declared without specifying a body definition.
+            """)]
+        ExpectedFunctionBody,
+        [ParseError("Invalid For Loop Statement", eParseErrorSeries.Syntax,
+            description: """
+            An invalid statement was found. A for loop must start with a variable creation, or valid expression.
+            A semi colon is also valid if you don't want to do anything at the start.
+            """)]
+        InvalidForLoopStatement,
+        [ParseError("No Else on If Expression", eParseErrorSeries.Syntax, 
+            description: """
+            An if expression must end with an else clause to ensure all possible cases are handled.
+            """)]
+        NoElseOnIfExpression
 
         #endregion
 

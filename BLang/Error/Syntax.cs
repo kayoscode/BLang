@@ -1,5 +1,6 @@
 ﻿using BLang.Utils;
 using System.Diagnostics;
+using System.Reflection.Metadata.Ecma335;
 
 namespace BLang.Error
 {
@@ -27,6 +28,31 @@ namespace BLang.Error
         }
     }
 
+    public class UnexpectedToken : ParseError
+    {
+        public UnexpectedToken(ParserContext context)
+            : base(context)
+        {
+        }
+
+        public override eErrorLevel Level => eErrorLevel.Error;
+
+        public override eParseError ErrorType => eParseError.UnexpectedToken;
+
+        protected override string Message
+        {
+            get
+            {
+                return $"Unexpected token: {Context.Token.Lexeme}";
+            }
+        }
+
+        protected override bool ChildRecoverFromError()
+        {
+            return true;
+        }
+    }
+
     public class MissingIdentifier : ParseError
     {
         public MissingIdentifier(ParserContext context) : base(context)
@@ -45,13 +71,17 @@ namespace BLang.Error
 
                 Trace.Assert(context == Parser.eNonTerminal.Function ||
                              context == Parser.eNonTerminal.VariableCreation ||
-                             context == Parser.eNonTerminal.ImportStatement);
+                             context == Parser.eNonTerminal.ImportStatement ||
+                             context == Parser.eNonTerminal.CalleeParams ||
+                             context == Parser.eNonTerminal.Module);
 
                 var errorTypeText = context switch
                 {
+                    Parser.eNonTerminal.Module => "module definition",
                     Parser.eNonTerminal.Function => "function definition",
                     Parser.eNonTerminal.VariableCreation => "variable declaration",
                     Parser.eNonTerminal.ImportStatement => "import statement",
+                    Parser.eNonTerminal.CalleeParams => "callee param",
                     _ => null
                 };
 
@@ -84,12 +114,14 @@ namespace BLang.Error
                 var context = Context.CurrentContext;
 
                 Trace.Assert(context == Parser.eNonTerminal.Function ||
-                             context == Parser.eNonTerminal.VariableCreation);
+                             context == Parser.eNonTerminal.VariableCreation ||
+                             context == Parser.eNonTerminal.CalleeParams);
 
                 var errorTypeText = context switch
                 {
                     Parser.eNonTerminal.Function => "function definition",
                     Parser.eNonTerminal.VariableCreation => "variable definition",
+                    Parser.eNonTerminal.CalleeParams => "callee param",
                     _ => null
                 };
 
@@ -143,7 +175,7 @@ namespace BLang.Error
         {
             get
             {
-                return $"';' expected";
+                return $"Expected ';'";
             }
         }
 
@@ -172,13 +204,113 @@ namespace BLang.Error
         {
             get
             {
-                return $"Expected {mExpectedToken}, but found {Context.Token.Lexeme}";
+                return $"Expected '{mExpectedToken}' but found '{Context.Token.Lexeme}'";
             }
         }
 
         protected override bool ChildRecoverFromError()
         {
-            throw new NotImplementedException();
+            return true;
+        }
+    }
+
+    public class MissingExpression : ParseError
+    {
+        public MissingExpression(ParserContext context) 
+            : base(context)
+        {
+        }
+
+        public override eErrorLevel Level => eErrorLevel.Error;
+
+        public override eParseError ErrorType => eParseError.MissingExpression;
+
+        protected override string Message
+        {
+            get
+            {
+                return $"'{Context.Token.Lexeme}' does not represent a term in an expression";
+            }
+        }
+
+        protected override bool ChildRecoverFromError()
+        {
+            return true;
+        }
+    }
+
+    public class ExpectedFunctionBody : ParseError
+    {
+        public ExpectedFunctionBody(ParserContext context)
+            : base(context)
+        {
+        }
+
+        public override eErrorLevel Level => eErrorLevel.Error;
+
+        public override eParseError ErrorType => eParseError.ExpectedFunctionBody;
+
+        protected override string Message
+        {
+            get
+            {
+                return "Expected function body";
+            }
+        }
+
+        protected override bool ChildRecoverFromError()
+        {
+            return true;
+        }
+    }
+
+    public class InvalidForLoopStatement : ParseError
+    {
+        public InvalidForLoopStatement(ParserContext context)
+            : base(context)
+        {
+        }
+
+        public override eErrorLevel Level => eErrorLevel.Error;
+
+        public override eParseError ErrorType => eParseError.InvalidForLoopStatement;
+
+        protected override string Message
+        {
+            get
+            {
+                return "Invalid statement in for loop";
+            }
+        }
+
+        protected override bool ChildRecoverFromError()
+        {
+            return true;
+        }
+    }
+
+    public class NoElseOnIfExpression : ParseError
+    {
+        public NoElseOnIfExpression(ParserContext context) 
+            : base(context)
+        {
+        }
+
+        public override eErrorLevel Level => eErrorLevel.Error;
+
+        public override eParseError ErrorType => eParseError.NoElseOnIfExpression;
+
+        protected override string Message
+        {
+            get
+            {
+                return "Else clause missing from if expression";
+            }
+        }
+
+        protected override bool ChildRecoverFromError()
+        {
+            return true;
         }
     }
 }

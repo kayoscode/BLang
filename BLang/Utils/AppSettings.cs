@@ -17,6 +17,6 @@
         /// If set to true, the debugger will log new tokens and when it changes states to the console.
         /// Will not print in release mode.
         /// </summary>
-        public static bool LogParserDetails = true;
+        public static bool LogParserDetails = false;
     }
 }

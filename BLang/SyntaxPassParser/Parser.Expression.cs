@@ -1,4 +1,5 @@
-﻿using BLang.Utils;
+﻿using BLang.Error;
+using BLang.Utils;
 using System.Diagnostics;
 
 namespace BLang
@@ -284,17 +285,8 @@ namespace BLang
             else if (mToken.Code == eOneCharSyntaxToken.OpenPar.Code())
             {
                 AdvanceToken();
-                Expression();
-
-                if (mToken.Code == eOneCharSyntaxToken.ClosePar.Code())
-                {
-                    AdvanceToken();
-                }
-                else
-                {
-                    // AddError();
-                    Debugger.Break();
-                }
+                ConsumeExpression();
+                ConsumeExpectedToken(eOneCharSyntaxToken.ClosePar);
             }
             else if (ParserUtils.IsIfExpression(mToken))
             {
@@ -302,8 +294,7 @@ namespace BLang
             }
             else
             {
-                // AddError();
-                Debugger.Break();
+                Trace.Assert(false, "We shouldn't have been able to get here");
             }
         }
 
@@ -315,25 +306,8 @@ namespace BLang
             }
             else if (mToken.Type == eTokenType.Identifier)
             {
-                ExpressionVariable();
+                AdvanceToken();
             }
-        }
-
-        /// <summary>
-        /// Handles and consumes any format an expression atom can be in.
-        /// </summary>
-        private void ExpressionVariable()
-        {
-            AdvanceToken();
-
-            if (mToken.Code == eOneCharSyntaxToken.OpenPar.Code())
-            {
-                FunctionCall();
-            }
-            //else if (mToken.Code == eOneCharSyntaxToken.OpenBrack.Code())
-            //{
-            // TODO.
-            //}
         }
 
         /// <summary>
@@ -346,61 +320,65 @@ namespace BLang
             // If we get here, we assume that we have an if token currently.
             AdvanceToken();
 
-            if (mToken.Code == eOneCharSyntaxToken.OpenPar.Code())
+            ConsumeExpectedToken(eOneCharSyntaxToken.OpenPar);
+            ConsumeExpression();
+            ConsumeExpectedToken(eOneCharSyntaxToken.ClosePar);
+
+            ConsumeExpectedToken(eTwoCharSyntaxToken.Arrow);
+            ConsumeExpression();
+
+            if (mToken.Code == eReserveWord.Else.Code())
             {
                 AdvanceToken();
-                Expression();
-
-                if (mToken.Code == eOneCharSyntaxToken.ClosePar.Code())
+                if (mToken.Code == eReserveWord.If.Code())
                 {
-                    AdvanceToken();
+                    IfExpression();
                 }
                 else
                 {
-                    // AddError();
-                    Debugger.Break();
-                }
-
-                if (mToken.Code == eTwoCharSyntaxToken.Arrow.Code())
-                {
-                    ExpressionCodeBlock();
-
-                    if (mToken.Code == eReserveWord.Else.Code())
-                    {
-                        AdvanceToken();
-                        if (mToken.Code == eReserveWord.If.Code())
-                        {
-                            IfExpression();
-                        }
-                        else if (mToken.Code == eTwoCharSyntaxToken.Arrow.Code())
-                        {
-                            ExpressionCodeBlock();
-                        }
-                        else
-                        {
-                            // AddError();
-                            Debugger.Break();
-                        }
-                    }
-                    else
-                    {
-                        // Add error, must have else clause
-                        Debugger.Break();
-                    }
-                }
-                else
-                {
-                    // AddError();
-                    Debugger.Break();
+                    ConsumeExpectedToken(eTwoCharSyntaxToken.Arrow);
+                    ConsumeExpression();
                 }
             }
             else
             {
-                // AddError();
-                Debugger.Break();
+                ErrorLogger.LogError(new NoElseOnIfExpression(mParserContext));
             }
 
             LogExitNonTerminal(eNonTerminal.IfExpression);
+        }
+
+        /// <summary>
+        /// Handles a function call as a term.
+        /// </summary>
+        private void FunctionCall()
+        {
+            LogEnterNonTerminal(eNonTerminal.FunctionCall);
+            AdvanceToken();
+
+            // Consume the parameters if they exist.
+            if (mToken.Code != eOneCharSyntaxToken.ClosePar.Code())
+            {
+                CallerParams(false);
+            }
+
+            ConsumeExpectedToken(eOneCharSyntaxToken.ClosePar);
+
+            LogExitNonTerminal(eNonTerminal.FunctionCall);
+        }
+
+        /// <summary>
+        /// Handles the indexing of an array as a term.
+        /// </summary>
+        private void ArrayIndex()
+        {
+            LogEnterNonTerminal(eNonTerminal.ArrayIndex);
+            AdvanceToken();
+
+            ConsumeExpression();
+            ConsumeExpectedToken(eOneCharSyntaxToken.CloseBrack);
+
+            LogExitNonTerminal(eNonTerminal.ArrayIndex);
         }
     }
 }
