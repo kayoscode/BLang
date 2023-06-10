@@ -274,7 +274,7 @@ namespace BLang
 
             if (ParserUtils.IsExpressionStartToken(mToken))
             {
-                Expression();
+                ConsumeExpression();
                 expressionFound = true;
             }
             else
