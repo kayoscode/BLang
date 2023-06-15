@@ -50,8 +50,17 @@ namespace BLang.Error
             {
                 return ChildRecoverFromError();
             }
+            else if (Level == eErrorLevel.Warning)
+            {
+                return true;
+            }
+            else if (Level == eErrorLevel.CriticalError)
+            {
+                return false;
+            }
 
-            return true;
+            Trace.Assert(false);
+            return false;
         }
 
         /// <summary>

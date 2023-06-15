@@ -161,11 +161,8 @@
         /// <returns></returns>
         public static bool IsCodeStatementToken(Tokenizer.Token token)
         {
-            return token.Code == eReserveWord.Let.Code() ||        // Varaible creation.
-                   // Possible expression.
+            return IsVariableStart(token) ||
                    IsExpressionStartToken(token) ||
-
-                   // Empty statement.
                    token.Code == eOneCharSyntaxToken.Semi.Code();
         }
 
@@ -175,10 +172,21 @@
         /// <returns></returns>
         public static bool IsModItem(Tokenizer.Token token)
         {
-            return (token.Code == eReserveWord.Module.Code() ||
-                    token.Code == eReserveWord.Function.Code() ||
+            return token.Code == eReserveWord.Module.Code() ||
+                    IsFunctionStart(token) ||
+                    IsVariableStart(token);
                     //token.Code == eReserveWord.) DATA STRUCTURES
-                    token.Code == eReserveWord.Let.Code());
+        }
+
+        public static bool IsFunctionStart(Tokenizer.Token token)
+        {
+            return token.Code == eReserveWord.Function.Code() ||
+                   token.Code == eReserveWord.EntryPoint.Code();
+        }
+
+        public static bool IsVariableStart(Tokenizer.Token token)
+        {
+            return token.Code == eReserveWord.Let.Code();
         }
     }
 }

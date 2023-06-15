@@ -22,6 +22,11 @@
 
             error.PrintErrorMessage();
             ErrorCount++;
+
+            if (!error.RecoverFromError())
+            {
+                throw new CriticalErrorException();
+            }
         }
 
         public int ErrorCount { get; private set; }

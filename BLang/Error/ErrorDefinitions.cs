@@ -115,6 +115,81 @@
         NewLineInCharLiteral,
 
         #endregion
+
+        #region Syntax errors
+
+        [ParseError("Unexpected Token in File", eParseErrorSeries.Syntax,
+            description: """
+            Invalid token found at file level. A file must include import statements at the top
+            followed by a module block.
+            """)]
+        UnexpectedTokenAtFileLevel,
+        [ParseError("Unexpected Token", eParseErrorSeries.Syntax,
+            description: """
+            An invalid token was found in the current context.
+            """)]
+        UnexpectedToken,
+        [ParseError("Identifier Expected", eParseErrorSeries.Syntax,
+            description: """
+            You did not give an identifier. An identifier is the name of a variable or function.
+            """)]
+        MissingIdentifier,
+        [ParseError("Type Expected", eParseErrorSeries.Syntax,
+            description: """
+            You did not give a type for the variable definition. A colon was added indicating
+            the variable has a type, but no valid type was specified.
+            """)]
+        MissingTypeSpecifier,
+        [ParseError("Missing Initializer", eParseErrorSeries.Syntax,
+            description: """
+            A variable was declared without an explicit type and must be initialized.
+            """)]
+        MissingInitializer,
+        [ParseError("Missing Semicolon", eParseErrorSeries.Syntax,
+            description: """
+            The compiler found a missing semicolon deliminating the end of a statement. A statement may
+            consume more than one line but must end with a semicolon.
+            """)]
+        MissingSemicolon,
+        [ParseError("Missing Syntax Token", eParseErrorSeries.Syntax,
+            description: """
+            The compiler found a missing syntax token. Examples include closing array indices or missing
+            commas in argument lists.
+            """)]
+        MissingSyntaxToken,
+        [ParseError("Missing Expression", eParseErrorSeries.Syntax,
+            description: """
+            The compiler did not find an expression when it was required.
+            """)]
+        MissingExpression,
+        [ParseError("Expected Function Body", eParseErrorSeries.Syntax,
+            description: """
+            A function was declared without specifying a body definition.
+            """)]
+        ExpectedFunctionBody,
+        [ParseError("Invalid For Loop Statement", eParseErrorSeries.Syntax,
+            description: """
+            An invalid statement was found. A for loop must start with a variable creation, or valid expression.
+            A semi colon is also valid if you don't want to do anything at the start.
+            """)]
+        InvalidForLoopStatement,
+        [ParseError("No Else on If Expression", eParseErrorSeries.Syntax, 
+            description: """
+            An if expression must end with an else clause to ensure all possible cases are handled.
+            """)]
+        NoElseOnIfExpression
+
+        #endregion
+
+        /**
+        SEMANTICS ERROR
+        [ParseError("Duplicate Access Modifier", eParseErrorSeries.Semantics
+            description: """
+            An access modifier was specified more than once.
+            """)]
+        DuplicateAccessModifier,
+        */
+
     }
 
     /// <summary>
