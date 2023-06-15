@@ -166,10 +166,6 @@
                    token.Code == eOneCharSyntaxToken.Semi.Code();
         }
 
-        /// <summary>
-        /// Is the token an item that belongs inside of a module definition.
-        /// </summary>
-        /// <returns></returns>
         public static bool IsModItem(Tokenizer.Token token)
         {
             return token.Code == eReserveWord.Module.Code() ||

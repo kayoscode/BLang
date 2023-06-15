@@ -15,20 +15,7 @@ namespace BLang.Utils
             Token = new();
             mContext = new();
             mFirstPassTokens = new();
-        }
-
-        /// <summary>
-        /// Copy constructor.
-        /// </summary>
-        /// <param name="other"></param>
-        public ParserContext(ParserContext other)
-        {
-            Token = new Tokenizer.Token(other.Token);
-            CurrentLine = other.CurrentLine;
-            CurrentChar = other.CurrentChar;
-
-            mContext = other.mContext;
-            mFirstPassTokens = other.mFirstPassTokens;
+            Tokenizer = new(this);
         }
 
         // Symbol table
@@ -36,6 +23,7 @@ namespace BLang.Utils
 
         // Scope context { namespace, class-ish thing, function }
         public Tokenizer.Token Token { get; private set; }
+        public Tokenizer Tokenizer { get; set; }
 
         public static ReserveTable ReserveTable { get; } = new();
         public static TypeTable PrimitiveTypeTable { get; } = new();
@@ -63,22 +51,24 @@ namespace BLang.Utils
         /// </summary>
         public ErrorLogger ErrorLogger { get; private set; } = new();
 
-        public void AddToken(Tokenizer.Token token, Parser.eNonTerminal context)
+        public void AddToken(Tokenizer.Token token, Parser.eParserContext context)
         {
-            mContext.Add(context);
             mFirstPassTokens.Add(new Tokenizer.Token(token));
         }
 
         /// <summary>
         /// The current context we are working within.
         /// </summary>
-        public Parser.eNonTerminal CurrentContext => mContext[mContext.Count - 1];
+        public Parser.eParserContext CurrentContext => mContext.Peek();
 
         /// <summary>
         /// This list gets filled in by the first pass. It should ensure this follows correct syntax
         /// if no fatal errors have been found.
         /// </summary>
-        private List<Parser.eNonTerminal> mContext;
+        private Stack<Parser.eParserContext> mContext;
         private List<Tokenizer.Token> mFirstPassTokens;
+
+        public Stack<Parser.eParserContext> Context => mContext;
+        public IReadOnlyList<Tokenizer.Token> FirstPassTokens => mFirstPassTokens;
     }
 }

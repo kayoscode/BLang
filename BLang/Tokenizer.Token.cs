@@ -13,7 +13,8 @@
         Integer,
         SyntaxToken,
         Char,
-        InvalidToken
+        InvalidToken,
+        EndOfStream
     }
 
     public partial class Tokenizer

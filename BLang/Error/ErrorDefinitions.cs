@@ -1,4 +1,6 @@
-﻿namespace BLang.Error
+﻿using BLang.Utils;
+
+namespace BLang.Error
 {
     /// <summary>
     /// All the different types of errors that can occur in the system.
@@ -190,6 +192,49 @@
         DuplicateAccessModifier,
         */
 
+    }
+
+    /// <summary>
+    /// Class to allow the creation of errors based on the token type.
+    /// </summary>
+    public static class ParseErrorFactory
+    {
+        public static ParseError CreateError(Enum error, ParserContext context, Enum expectedToken = null)
+        {
+            return error switch
+            {
+                #region Lexical
+
+                eParseError.UnexpectedCharacter => new UnexpectedCharacter(context),
+                eParseError.InvalidRealLiteral => new InvalidRealLiteral(context),
+                eParseError.TooManyCharactersInCharLiteral => new TooManyCharactersInCharLiteral(context),
+                eParseError.EmptyCharLiteral => new EmptyCharLiteral(context),
+                eParseError.InvalidNumberLiteral => new InvalidNumberLiteral(context),
+                eParseError.UnrecognizedEscapeSequence => new UnrecognizedEscapeSequence(context),
+                eParseError.NewLineInStringLiteral => new NewLineInLiteral(context, eTokenType.String),
+                eParseError.NewLineInCharLiteral => new NewLineInLiteral(context, eTokenType.Char),
+
+                #endregion
+
+                #region syntactic
+
+                eParseError.UnexpectedTokenAtFileLevel => new UnexpectedTokenAtFileLevel(context),
+                eParseError.UnexpectedToken => new UnexpectedToken(context),
+                eParseError.MissingIdentifier => new MissingIdentifier(context),
+                eParseError.MissingTypeSpecifier => new MissingTypeSpecifier(context),
+                eParseError.MissingInitializer => new MissingInitializer(context),
+                eParseError.MissingSemicolon => new MissingSemicolon(context),
+                eParseError.MissingSyntaxToken => new MissingSyntaxToken(context, expectedToken),
+                eParseError.MissingExpression => new MissingExpression(context),
+                eParseError.ExpectedFunctionBody => new ExpectedFunctionBody(context),
+                eParseError.InvalidForLoopStatement => new InvalidForLoopStatement(context),
+                eParseError.NoElseOnIfExpression => new NoElseOnIfExpression(context),
+
+                #endregion
+
+                _ => throw new ArgumentException()
+            };
+        }
     }
 
     /// <summary>

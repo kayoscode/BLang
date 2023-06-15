@@ -1,34 +1,88 @@
 ﻿using BLang.Utils;
 using System.Diagnostics;
-using System.Reflection.Metadata.Ecma335;
 
 namespace BLang.Error
 {
-    public class InvalidTokenAtFileLevel : ParseError
+    internal static class ErrorRecoveryUtils
     {
-        public InvalidTokenAtFileLevel(ParserContext context) : base(context)
+        public static void ConsumeUntilExpectedToken(ParserContext context, Enum token)
+        {
+            while (context.Token.Code != SyntaxTokenAttributeData.Code(token))
+            {
+                if (!context.Tokenizer.NextToken())
+                {
+                    break;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Searches for a synchronization token until it finds one, then continues.
+        /// None of the tokens discarded in panic mode are inserted into the stream.
+        /// </summary>
+        public static void RecoverPanicMode(ParserContext context)
+        {
+            while (!context.CurrentContext.SyncTokens().Contains(context.Token.Code) &&
+                   context.Token.Type != eTokenType.EndOfStream)
+            {
+                context.Tokenizer.NextToken();
+            }
+        }
+
+        public const string FakeIdt = "$";
+    }
+
+    /// <summary>
+    /// Triggers panic mode when the error occurs.
+    /// </summary>
+    public abstract class PanicModeError : ParseError
+    {
+        protected PanicModeError(ParserContext context)
+            : base(context)
         {
         }
 
-        public override eErrorLevel Level => eErrorLevel.CriticalError;
+        protected override sealed bool ChildRecoverFromError()
+        {
+            ErrorRecoveryUtils.RecoverPanicMode(Context);
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// Inserts the correct token if the error occurs.
+    /// </summary>
+    public abstract class TokenInsertionError : ParseError
+    {
+        public TokenInsertionError(ParserContext context) 
+            : base(context) 
+        {
+            TokenToAdd = new();
+        }
+
+        protected override sealed bool ChildRecoverFromError()
+        {
+            Context.AddToken(TokenToAdd, Context.CurrentContext);
+            return true;
+        }
+
+        protected Tokenizer.Token TokenToAdd { get; private set; }
+    }
+
+    public class UnexpectedTokenAtFileLevel : PanicModeError
+    {
+        public UnexpectedTokenAtFileLevel(ParserContext context) : base(context)
+        {
+        }
+
+        public override eErrorLevel Level => eErrorLevel.Error;
 
         public override eParseError ErrorType => eParseError.UnexpectedTokenAtFileLevel;
 
         protected override string Message => "A file must include only a list of imports followed by a module block";
-
-        protected override bool ChildRecoverFromError()
-        {
-            // Cannot recover from this error.
-            // Maybe we can eventually insert the right token into the stream to put it into context
-            // but maybe that's not worth it.
-
-            // Or a simpler way to do it would be to pull tokens off until we find one that matches something that's 
-            // expected at the file level.
-            return false;
-        }
     }
 
-    public class UnexpectedToken : ParseError
+    public class UnexpectedToken : PanicModeError
     {
         public UnexpectedToken(ParserContext context)
             : base(context)
@@ -46,17 +100,14 @@ namespace BLang.Error
                 return $"Unexpected token: {Context.Token.Lexeme}";
             }
         }
-
-        protected override bool ChildRecoverFromError()
-        {
-            return true;
-        }
     }
 
-    public class MissingIdentifier : ParseError
+    public class MissingIdentifier : TokenInsertionError
     {
         public MissingIdentifier(ParserContext context) : base(context)
         {
+            TokenToAdd.Lexeme = ErrorRecoveryUtils.FakeIdt;
+            TokenToAdd.Type = eTokenType.Identifier;
         }
 
         public override eErrorLevel Level => eErrorLevel.Error;
@@ -69,38 +120,34 @@ namespace BLang.Error
             {
                 var context = Context.CurrentContext;
 
-                Trace.Assert(context == Parser.eNonTerminal.Function ||
-                             context == Parser.eNonTerminal.VariableCreation ||
-                             context == Parser.eNonTerminal.ImportStatement ||
-                             context == Parser.eNonTerminal.CalleeParams ||
-                             context == Parser.eNonTerminal.Module);
+                Trace.Assert(context == Parser.eParserContext.FunctionDefinition ||
+                             context == Parser.eParserContext.VariableCreation ||
+                             context == Parser.eParserContext.ImportStatement ||
+                             context == Parser.eParserContext.CalleeParams ||
+                             context == Parser.eParserContext.Module);
 
                 var errorTypeText = context switch
                 {
-                    Parser.eNonTerminal.Module => "module definition",
-                    Parser.eNonTerminal.Function => "function definition",
-                    Parser.eNonTerminal.VariableCreation => "variable declaration",
-                    Parser.eNonTerminal.ImportStatement => "import statement",
-                    Parser.eNonTerminal.CalleeParams => "callee param",
+                    Parser.eParserContext.Module => "module definition",
+                    Parser.eParserContext.FunctionDefinition => "function definition",
+                    Parser.eParserContext.VariableCreation => "variable declaration",
+                    Parser.eParserContext.ImportStatement => "import statement",
+                    Parser.eParserContext.CalleeParams => "callee param",
                     _ => null
                 };
 
-                return $"Identifer was expected in {errorTypeText}";
+                return $"Identifer was expected in {errorTypeText} instead '{Context.Token.Lexeme}' was found";
             }
-        }
-
-        protected override bool ChildRecoverFromError()
-        {
-            // To recover from this error, insert a nameless identifier into the token stream.
-            return true;
         }
     }
 
-    public class MissingTypeSpecifier : ParseError
+    public class MissingTypeSpecifier : TokenInsertionError
     {
 
         public MissingTypeSpecifier(ParserContext context) : base(context)
         {
+            TokenToAdd.Lexeme = ErrorRecoveryUtils.FakeIdt;
+            TokenToAdd.Type = eTokenType.Type;
         }
 
         public override eErrorLevel Level => eErrorLevel.Error;
@@ -113,30 +160,24 @@ namespace BLang.Error
             {
                 var context = Context.CurrentContext;
 
-                Trace.Assert(context == Parser.eNonTerminal.Function ||
-                             context == Parser.eNonTerminal.VariableCreation ||
-                             context == Parser.eNonTerminal.CalleeParams);
+                Trace.Assert(context == Parser.eParserContext.FunctionDefinition ||
+                             context == Parser.eParserContext.VariableCreation ||
+                             context == Parser.eParserContext.CalleeParams);
 
                 var errorTypeText = context switch
                 {
-                    Parser.eNonTerminal.Function => "function definition",
-                    Parser.eNonTerminal.VariableCreation => "variable definition",
-                    Parser.eNonTerminal.CalleeParams => "callee param",
+                    Parser.eParserContext.FunctionDefinition => "function definition",
+                    Parser.eParserContext.VariableCreation => "variable definition",
+                    Parser.eParserContext.CalleeParams => "callee param",
                     _ => null
                 };
 
                 return $"Type was expected in {errorTypeText}";
             }
         }
-
-        protected override bool ChildRecoverFromError()
-        {
-            // To recover from this error, insert a nameless identifier into the token stream.
-            return true;
-        }
     }
 
-    public class MissingInitializer : ParseError
+    public class MissingInitializer : PanicModeError
     {
         public MissingInitializer(ParserContext context) : base(context)
         {
@@ -153,18 +194,14 @@ namespace BLang.Error
                 return $"Implicitly typed variables must be initialized";
             }
         }
-
-        protected override bool ChildRecoverFromError()
-        {
-            // To recover from this error, insert a nameless identifier into the token stream.
-            return true;
-        }
     }
 
-    public class MissingSemicolon : ParseError
+    public class MissingSemicolon : TokenInsertionError
     {
         public MissingSemicolon(ParserContext context) : base(context)
         {
+            TokenToAdd.Code = eOneCharSyntaxToken.Semi.Code();
+            TokenToAdd.Lexeme = eOneCharSyntaxToken.Semi.AsLexeme();
         }
 
         public override eErrorLevel Level => eErrorLevel.Error;
@@ -178,22 +215,21 @@ namespace BLang.Error
                 return $"Expected ';'";
             }
         }
-
-        protected override bool ChildRecoverFromError()
-        {
-            // To recover from this error, insert a nameless identifier into the token stream.
-            return true;
-        }
     }
 
-    public class MissingSyntaxToken : ParseError 
+    public class MissingSyntaxToken : TokenInsertionError 
     {
-        private string mExpectedToken;
+        private string mExpectedTokenString => SyntaxTokenAttributeData.AsLexeme(mExpectedTokenEnum);
+        private Enum mExpectedTokenEnum;
 
-        public MissingSyntaxToken(ParserContext context, string expectedToken) 
+        public MissingSyntaxToken(ParserContext context, Enum expectedToken) 
             : base(context)
         {
-            mExpectedToken = expectedToken;
+            mExpectedTokenEnum = expectedToken; 
+
+            TokenToAdd.Lexeme = mExpectedTokenString;
+            TokenToAdd.Type = eTokenType.SyntaxToken;
+            TokenToAdd.Code = SyntaxTokenAttributeData.Code(mExpectedTokenEnum);
         }
 
         public override eErrorLevel Level => eErrorLevel.Error;
@@ -204,17 +240,12 @@ namespace BLang.Error
         {
             get
             {
-                return $"Expected '{mExpectedToken}' but found '{Context.Token.Lexeme}'";
+                return $"Expected '{mExpectedTokenString}' but found '{Context.Token.Lexeme}'";
             }
-        }
-
-        protected override bool ChildRecoverFromError()
-        {
-            return true;
         }
     }
 
-    public class MissingExpression : ParseError
+    public class MissingExpression : PanicModeError
     {
         public MissingExpression(ParserContext context) 
             : base(context)
@@ -232,14 +263,9 @@ namespace BLang.Error
                 return $"'{Context.Token.Lexeme}' does not represent a term in an expression";
             }
         }
-
-        protected override bool ChildRecoverFromError()
-        {
-            return true;
-        }
     }
 
-    public class ExpectedFunctionBody : ParseError
+    public class ExpectedFunctionBody : PanicModeError
     {
         public ExpectedFunctionBody(ParserContext context)
             : base(context)
@@ -257,14 +283,9 @@ namespace BLang.Error
                 return "Expected function body";
             }
         }
-
-        protected override bool ChildRecoverFromError()
-        {
-            return true;
-        }
     }
 
-    public class InvalidForLoopStatement : ParseError
+    public class InvalidForLoopStatement : PanicModeError
     {
         public InvalidForLoopStatement(ParserContext context)
             : base(context)
@@ -282,14 +303,9 @@ namespace BLang.Error
                 return "Invalid statement in for loop";
             }
         }
-
-        protected override bool ChildRecoverFromError()
-        {
-            return true;
-        }
     }
 
-    public class NoElseOnIfExpression : ParseError
+    public class NoElseOnIfExpression : PanicModeError
     {
         public NoElseOnIfExpression(ParserContext context) 
             : base(context)
@@ -306,11 +322,6 @@ namespace BLang.Error
             {
                 return "Else clause missing from if expression";
             }
-        }
-
-        protected override bool ChildRecoverFromError()
-        {
-            return true;
         }
     }
 }
