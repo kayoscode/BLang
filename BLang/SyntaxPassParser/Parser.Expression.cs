@@ -18,7 +18,9 @@ namespace BLang
         /// </summary>
         private void Expression()
         {
+            LogEnterContext(eParserContext.Expression);
             ExpressionAssignmentOperator();
+            LogExitContext(eParserContext.Expression);
         }
 
         // Level 14 -> assignment operators.
@@ -294,7 +296,7 @@ namespace BLang
             }
             else
             {
-                Trace.Assert(false, "We shouldn't have been able to get here");
+                ErrorLogger.LogError(new UnexpectedToken(mParserContext));
             }
         }
 
@@ -316,7 +318,7 @@ namespace BLang
         /// </summary>
         private void IfExpression()
         {
-            LogEnterNonTerminal(eParserContext.IfExpression);
+            LogEnterContext(eParserContext.IfExpression);
             // If we get here, we assume that we have an if token currently.
             AdvanceToken();
 
@@ -345,7 +347,7 @@ namespace BLang
                 ErrorLogger.LogError(new NoElseOnIfExpression(mParserContext));
             }
 
-            LogExitNonTerminal(eParserContext.IfExpression);
+            LogExitContext(eParserContext.IfExpression);
         }
 
         /// <summary>
@@ -353,7 +355,7 @@ namespace BLang
         /// </summary>
         private void FunctionCall()
         {
-            LogEnterNonTerminal(eParserContext.FunctionCall);
+            LogEnterContext(eParserContext.FunctionCall);
             AdvanceToken();
 
             // Consume the parameters if they exist.
@@ -364,7 +366,7 @@ namespace BLang
 
             ConsumeExpectedToken(eOneCharSyntaxToken.ClosePar);
 
-            LogExitNonTerminal(eParserContext.FunctionCall);
+            LogExitContext(eParserContext.FunctionCall);
         }
 
         /// <summary>
@@ -372,13 +374,13 @@ namespace BLang
         /// </summary>
         private void ArrayIndex()
         {
-            LogEnterNonTerminal(eParserContext.ArrayIndex);
+            LogEnterContext(eParserContext.ArrayIndex);
             AdvanceToken();
 
             ConsumeExpression();
             ConsumeExpectedToken(eOneCharSyntaxToken.CloseBrack);
 
-            LogExitNonTerminal(eParserContext.ArrayIndex);
+            LogExitContext(eParserContext.ArrayIndex);
         }
     }
 }
