@@ -16,7 +16,7 @@
         F64,
         [PrimitiveType("bool", 1)]
         Bool,
-        [PrimitiveType("char", 8)]
+        [PrimitiveType("char", 1)]
         Char,
     }
 }

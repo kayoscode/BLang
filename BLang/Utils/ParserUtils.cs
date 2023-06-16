@@ -112,7 +112,7 @@
         {
             return token.Code == eOneCharSyntaxToken.Not.Code() ||
                    token.Code == eOneCharSyntaxToken.Minus.Code() ||
-                   token.Code == eOneCharSyntaxToken.Compliment.Code() ||
+                   token.Code == eOneCharSyntaxToken.Tilde.Code() ||
                    IsIncDec(token);
         }
 
