@@ -102,6 +102,34 @@
             return $"{token.Char1()}{token.Char2()}{token.Char3()}";
         }
 
+        /// <summary>
+        /// Code extension put on the base enum class. 
+        /// This is slower and should generally be avoided, but good for generic handling of codes.
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public static int Code(Enum token)
+        {
+            return token switch
+            {
+                eOneCharSyntaxToken tk => tk.Code(),
+                eTwoCharSyntaxToken tk => tk.Code(),
+                eThreeCharSyntaxToken tk => tk.Code(),
+                _ => throw new ArgumentException()
+            };
+        }
+
+        public static string AsLexeme(Enum token)
+        {
+            return token switch
+            {
+                eOneCharSyntaxToken tk => tk.AsLexeme(),
+                eTwoCharSyntaxToken tk => tk.AsLexeme(),
+                eThreeCharSyntaxToken tk => tk.AsLexeme(),
+                _ => throw new ArgumentException()
+            };
+        }
+
         private static readonly AttributeCacheHelper<OneCharSyntaxTokenAttribute, eOneCharSyntaxToken> mCacheHelper = new();
         private static readonly AttributeCacheHelper<TwoCharSyntaxTokenAttribute, eTwoCharSyntaxToken> mTwoCharCacheHelper = new();
         private static readonly AttributeCacheHelper<ThreeCharSyntaxTokenAttribute, eThreeCharSyntaxToken> mThreeCharCacheHelper = new();

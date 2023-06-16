@@ -14,7 +14,7 @@ namespace BLang.Error
         /// </summary>
         public ParseError(ParserContext context) 
         {
-            Context = new ParserContext(context);
+            Context = context;
         }
 
         /// <summary>

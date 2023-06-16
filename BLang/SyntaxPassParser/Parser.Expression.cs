@@ -316,7 +316,7 @@ namespace BLang
         /// </summary>
         private void IfExpression()
         {
-            LogEnterNonTerminal(eNonTerminal.IfExpression);
+            LogEnterNonTerminal(eParserContext.IfExpression);
             // If we get here, we assume that we have an if token currently.
             AdvanceToken();
 
@@ -345,7 +345,7 @@ namespace BLang
                 ErrorLogger.LogError(new NoElseOnIfExpression(mParserContext));
             }
 
-            LogExitNonTerminal(eNonTerminal.IfExpression);
+            LogExitNonTerminal(eParserContext.IfExpression);
         }
 
         /// <summary>
@@ -353,7 +353,7 @@ namespace BLang
         /// </summary>
         private void FunctionCall()
         {
-            LogEnterNonTerminal(eNonTerminal.FunctionCall);
+            LogEnterNonTerminal(eParserContext.FunctionCall);
             AdvanceToken();
 
             // Consume the parameters if they exist.
@@ -364,7 +364,7 @@ namespace BLang
 
             ConsumeExpectedToken(eOneCharSyntaxToken.ClosePar);
 
-            LogExitNonTerminal(eNonTerminal.FunctionCall);
+            LogExitNonTerminal(eParserContext.FunctionCall);
         }
 
         /// <summary>
@@ -372,13 +372,13 @@ namespace BLang
         /// </summary>
         private void ArrayIndex()
         {
-            LogEnterNonTerminal(eNonTerminal.ArrayIndex);
+            LogEnterNonTerminal(eParserContext.ArrayIndex);
             AdvanceToken();
 
             ConsumeExpression();
             ConsumeExpectedToken(eOneCharSyntaxToken.CloseBrack);
 
-            LogExitNonTerminal(eNonTerminal.ArrayIndex);
+            LogExitNonTerminal(eParserContext.ArrayIndex);
         }
     }
 }

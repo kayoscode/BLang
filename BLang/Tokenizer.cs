@@ -62,6 +62,7 @@ namespace BLang
                     return true;
                 }
 
+                mCurrentToken.Type = eTokenType.EndOfStream;
                 return false;
             }
 
