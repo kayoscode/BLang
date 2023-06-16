@@ -65,7 +65,7 @@
         [OneCharSyntaxToken('.')]
         Period,
         [OneCharSyntaxToken('~')]
-        Compliment,
+        Tilde,
         [OneCharSyntaxToken('*')]
         Star,
         [OneCharSyntaxToken('(')]
