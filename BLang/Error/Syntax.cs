@@ -102,12 +102,10 @@ namespace BLang.Error
         }
     }
 
-    public class MissingIdentifier : TokenInsertionError
+    public class MissingIdentifier : PanicModeError
     {
         public MissingIdentifier(ParserContext context) : base(context)
         {
-            TokenToAdd.Lexeme = ErrorRecoveryUtils.FakeIdt;
-            TokenToAdd.Type = eTokenType.Identifier;
         }
 
         public override eErrorLevel Level => eErrorLevel.Error;
@@ -196,12 +194,10 @@ namespace BLang.Error
         }
     }
 
-    public class MissingSemicolon : TokenInsertionError
+    public class MissingSemicolon : ParseError
     {
         public MissingSemicolon(ParserContext context) : base(context)
         {
-            TokenToAdd.Code = eOneCharSyntaxToken.Semi.Code();
-            TokenToAdd.Lexeme = eOneCharSyntaxToken.Semi.AsLexeme();
         }
 
         public override eErrorLevel Level => eErrorLevel.Error;
@@ -215,9 +211,24 @@ namespace BLang.Error
                 return $"Expected ';'";
             }
         }
+
+        protected override bool ChildRecoverFromError()
+        {
+            // Missing semicolons should always skip the current token if they aren't a sync token.
+            if (!Context.CurrentContext.SyncTokens().Contains(Context.Token.Code))
+            {
+                Context.Tokenizer.NextToken();
+            }
+
+            Tokenizer.Token token = new();
+            token.Code = eOneCharSyntaxToken.Semi.Code();
+            token.Lexeme = eOneCharSyntaxToken.Semi.AsLexeme();
+            Context.AddToken(token, Context.CurrentContext);
+            return true;
+        }
     }
 
-    public class MissingSyntaxToken : TokenInsertionError 
+    public class MissingSyntaxToken : PanicModeError 
     {
         private string mExpectedTokenString => SyntaxTokenAttributeData.AsLexeme(mExpectedTokenEnum);
         private Enum mExpectedTokenEnum;
@@ -226,10 +237,6 @@ namespace BLang.Error
             : base(context)
         {
             mExpectedTokenEnum = expectedToken; 
-
-            TokenToAdd.Lexeme = mExpectedTokenString;
-            TokenToAdd.Type = eTokenType.SyntaxToken;
-            TokenToAdd.Code = SyntaxTokenAttributeData.Code(mExpectedTokenEnum);
         }
 
         public override eErrorLevel Level => eErrorLevel.Error;

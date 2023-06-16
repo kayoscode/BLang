@@ -54,7 +54,7 @@
         {
             [SyncToken(reserveWordSyncTokens: new eReserveWord[]
             {
-                eReserveWord.Module
+                eReserveWord.Module,
             })]
             File,
 
@@ -100,7 +100,6 @@
             [SyncToken(new eOneCharSyntaxToken[]
             {
                 eOneCharSyntaxToken.Semi,
-                eOneCharSyntaxToken.OpenPar, eOneCharSyntaxToken.ClosePar,
 
                 // Expressions can sync with any valid operator except for postfix/prefix.
                 eOneCharSyntaxToken.Star, eOneCharSyntaxToken.Divide, eOneCharSyntaxToken.Mod,
@@ -108,7 +107,6 @@
 
                 eOneCharSyntaxToken.Equal,
                 eOneCharSyntaxToken.And, eOneCharSyntaxToken.Or, eOneCharSyntaxToken.Xor,
-                eOneCharSyntaxToken.OpenAngleBrace, eOneCharSyntaxToken.CloseAngleBrace,
 
             }, new eTwoCharSyntaxToken[]
             {
@@ -134,7 +132,7 @@
 
             [SyncToken(new eOneCharSyntaxToken[]
             {
-                eOneCharSyntaxToken.CloseBrace
+                eOneCharSyntaxToken.CloseBrace, eOneCharSyntaxToken.Semi
             })]
             CodeBlock,
 
@@ -143,6 +141,14 @@
                 eOneCharSyntaxToken.Semi, eOneCharSyntaxToken.CloseBrace
             })]
             Statement,
+
+            [SyncToken(new eOneCharSyntaxToken[]
+            {
+                eOneCharSyntaxToken.OpenBrace,
+                eOneCharSyntaxToken.Semi, eOneCharSyntaxToken.CloseBrace
+            })]
+            // If and while loop statements.
+            BlockStatement,
 
             [SyncToken(new eOneCharSyntaxToken[]
             {
@@ -162,14 +168,7 @@
             [SyncToken(new eOneCharSyntaxToken[]
             {
                 eOneCharSyntaxToken.CloseBrace, eOneCharSyntaxToken.OpenBrace,
-                eOneCharSyntaxToken.ClosePar,
-            })]
-            WhileLoop,
-
-            [SyncToken(new eOneCharSyntaxToken[]
-            {
-                eOneCharSyntaxToken.CloseBrace, eOneCharSyntaxToken.OpenBrace,
-                eOneCharSyntaxToken.ClosePar, eOneCharSyntaxToken.CloseBrace
+                eOneCharSyntaxToken.ClosePar, eOneCharSyntaxToken.Semi
             })]
             ForLoop,
 

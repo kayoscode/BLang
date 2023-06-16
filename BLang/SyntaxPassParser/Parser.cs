@@ -29,7 +29,7 @@ namespace BLang
 
             File();
 
-            if (mIsEof && 
+            if (IsEof && 
                 ErrorLogger.ErrorCount == 0)
             {
                 Console.WriteLine("File parsed to completion.");
@@ -41,10 +41,10 @@ namespace BLang
         /// </summary>
         private void File()
         {
-            LogEnterNonTerminal(eParserContext.File);
+            LogEnterContext(eParserContext.File);
 
             // Load the import statements. They can only appear at the top.
-            while (mToken.Code == eReserveWord.Import.Code() && !mIsEof)
+            while (mToken.Code == eReserveWord.Import.Code() && !IsEof)
             {
                 ImportStatement();
             }
@@ -61,7 +61,7 @@ namespace BLang
                 }
             }
 
-            LogExitNonTerminal(eParserContext.File);
+            LogExitContext(eParserContext.File);
         }
 
         /// <summary>
@@ -70,7 +70,7 @@ namespace BLang
         /// </summary>
         private void ImportStatement()
         {
-            LogEnterNonTerminal(eParserContext.ImportStatement);
+            LogEnterContext(eParserContext.ImportStatement);
             AdvanceToken();
 
             ConsumeIdentifier();
@@ -84,7 +84,7 @@ namespace BLang
                 ConsumeSemiColon();
             }
 
-            LogExitNonTerminal(eParserContext.ImportStatement);
+            LogExitContext(eParserContext.ImportStatement);
         }
 
         /// <summary>
@@ -92,20 +92,27 @@ namespace BLang
         /// </summary>
         private void Module()
         {
-            LogEnterNonTerminal(eParserContext.Module);
+            LogEnterContext(eParserContext.Module);
             AdvanceToken();
 
             ConsumeIdentifier();
             ConsumeExpectedToken(eOneCharSyntaxToken.OpenBrace);
 
-            while (ParserUtils.IsModItem(mToken) && !mIsEof)
+            while (mToken.Code != eOneCharSyntaxToken.CloseBrace.Code() && !IsEof)
             {
-                ModItem();
+                if (ParserUtils.IsModItem(mToken))
+                {
+                    ModItem();
+                }
+                else
+                {
+                    ErrorLogger.LogError(new UnexpectedToken(mParserContext));
+                }
             }
 
             ConsumeExpectedToken(eOneCharSyntaxToken.CloseBrace, eParseError.UnexpectedToken);
 
-            LogExitNonTerminal(eParserContext.Module);
+            LogExitContext(eParserContext.Module);
         }
 
         /// <summary>
@@ -129,7 +136,7 @@ namespace BLang
         
         private void Function()
         {
-            LogEnterNonTerminal(eParserContext.FunctionDefinition);
+            LogEnterContext(eParserContext.FunctionDefinition);
             AdvanceToken();
 
             ConsumeIdentifier();
@@ -146,18 +153,18 @@ namespace BLang
 
             CodeBlock();
 
-            LogExitNonTerminal(eParserContext.FunctionDefinition);
+            LogExitContext(eParserContext.FunctionDefinition);
         }
 
         private void CodeBlock()
         {
-            LogEnterNonTerminal(eParserContext.CodeBlock);
+            LogEnterContext(eParserContext.CodeBlock);
 
             ConsumeExpectedToken(eOneCharSyntaxToken.OpenBrace);
             StatementList();
             ConsumeExpectedToken(eOneCharSyntaxToken.CloseBrace);
 
-            LogExitNonTerminal(eParserContext.CodeBlock);
+            LogExitContext(eParserContext.CodeBlock);
         }
 
         /// <summary>
@@ -166,7 +173,19 @@ namespace BLang
         /// </summary>
         private void StatementList()
         {
-            while (ParserUtils.IsStatementToken(mToken) && !mIsEof)
+            while (mToken.Code != eOneCharSyntaxToken.CloseBrace.Code() && !IsEof)
+            {
+                if (ParserUtils.IsStatementToken(mToken))
+                {
+                    Statement();
+                }
+                else
+                {
+                    ErrorLogger.LogError(new UnexpectedToken(mParserContext));
+                }
+            }
+
+            while (ParserUtils.IsStatementToken(mToken) && !IsEof)
             {
                 Statement();
             }
@@ -174,7 +193,7 @@ namespace BLang
 
         private void ForLoop()
         {
-            LogEnterNonTerminal(eParserContext.ForLoop);
+            LogEnterContext(eParserContext.ForLoop);
             AdvanceToken();
 
             ConsumeExpectedToken(eOneCharSyntaxToken.OpenPar);
@@ -208,12 +227,12 @@ namespace BLang
                 Statement();
             }
 
-            LogExitNonTerminal(eParserContext.ForLoop);
+            LogExitContext(eParserContext.ForLoop);
         }
 
         private void WhileLoop()
         {
-            LogEnterNonTerminal(eParserContext.WhileLoop);
+            LogEnterContext(eParserContext.BlockStatement);
             AdvanceToken();
 
             ConsumeExpectedToken(eOneCharSyntaxToken.OpenPar);
@@ -229,12 +248,12 @@ namespace BLang
                 Statement();
             }
 
-            LogExitNonTerminal(eParserContext.WhileLoop);
+            LogExitContext(eParserContext.BlockStatement);
         }
 
         private void CalleeParams(bool required)
         {
-            LogEnterNonTerminal(eParserContext.CalleeParams);
+            LogEnterContext(eParserContext.CalleeParams);
 
             if (required || mToken.Type == eTokenType.Identifier)
             {
@@ -249,12 +268,12 @@ namespace BLang
                 }
             }
 
-            LogExitNonTerminal(eParserContext.CalleeParams);
+            LogExitContext(eParserContext.CalleeParams);
         }
 
         private void CallerParams(bool required)
         {
-            LogEnterNonTerminal(eParserContext.CallerParams);
+            LogEnterContext(eParserContext.CallerParams);
             bool expressionFound = false;
 
             if (ParserUtils.IsExpressionStartToken(mToken))
@@ -279,7 +298,7 @@ namespace BLang
                 }
             }
 
-            LogExitNonTerminal(eParserContext.CallerParams);
+            LogExitContext(eParserContext.CallerParams);
         }
 
         /// <summary>
@@ -299,6 +318,8 @@ namespace BLang
 
         private void IfStatement()
         {
+            LogEnterContext(eParserContext.BlockStatement);
+
             AdvanceToken();
 
             ConsumeExpectedToken(eOneCharSyntaxToken.OpenPar);
@@ -333,6 +354,8 @@ namespace BLang
                     Statement();
                 }
             }
+
+            LogExitContext(eParserContext.BlockStatement);
         }
 
         /// <summary>
@@ -342,7 +365,7 @@ namespace BLang
         /// </summary>
         private void VariableCreation()
         {
-            LogEnterNonTerminal(eParserContext.VariableCreation);
+            LogEnterContext(eParserContext.VariableCreation);
             AdvanceToken();
 
             ConsumeIdentifier();
@@ -357,7 +380,7 @@ namespace BLang
                 {
                     AdvanceToken();
 
-                    LogExitNonTerminal(eParserContext.VariableCreation);
+                    LogExitContext(eParserContext.VariableCreation);
                     return;
                 }
             }
@@ -371,7 +394,7 @@ namespace BLang
 
             ConsumeSemiColon();
 
-            LogExitNonTerminal(eParserContext.VariableCreation);
+            LogExitContext(eParserContext.VariableCreation);
         }
 
         private void OptionalType()
@@ -392,7 +415,7 @@ namespace BLang
         /// </summary>
         private void Statement()
         {
-            LogEnterNonTerminal(eParserContext.Statement);
+            LogEnterContext(eParserContext.Statement);
 
             if (mToken.Code == eReserveWord.If.Code())
             {
@@ -419,7 +442,7 @@ namespace BLang
                 ErrorLogger.LogError(new UnexpectedToken(mParserContext));
             }
 
-            LogExitNonTerminal(eParserContext.Statement);
+            LogExitContext(eParserContext.Statement);
         }
 
         /// <summary>
@@ -450,11 +473,11 @@ namespace BLang
 
         private void AdvanceToken()
         {
-            mIsEof = !mTokenizer.NextToken();
+            mTokenizer.NextToken();
             mParserContext.AddToken(mToken, mCurrentContext);
 
 #if (DEBUG)
-            if (!mIsEof)
+            if (!IsEof)
             {
                 if (AppSettings.LogParserDetails)
                 {
@@ -632,7 +655,7 @@ namespace BLang
             return true;
         }
 
-        private void LogEnterNonTerminal(eParserContext nt)
+        private void LogEnterContext(eParserContext nt)
         {
             ParserContext.Context.Push(nt);
             mCurrentContext = nt;
@@ -645,7 +668,7 @@ namespace BLang
 #endif
         }
 
-        private void LogExitNonTerminal(eParserContext nt)
+        private void LogExitContext(eParserContext nt)
         {
             Trace.Assert(ParserContext.Context.Count > 0);
             Trace.Assert(nt == ParserContext.CurrentContext);
@@ -663,7 +686,7 @@ namespace BLang
         private ParserContext mParserContext;
         private Tokenizer mTokenizer;
         private Tokenizer.Token mToken;
-        private bool mIsEof = false;
+        private bool IsEof => mToken.Type == eTokenType.EndOfStream;
 
         private eParserContext mCurrentContext = eParserContext.File;
 
